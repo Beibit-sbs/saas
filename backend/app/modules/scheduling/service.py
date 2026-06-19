@@ -40,6 +40,7 @@ from app.modules.scheduling.models import (
 from app.modules.scheduling.schemas import (
     ConflictReportSchema,
     CourseSectionCreateSchema,
+    CourseSectionListResponseSchema,
     CourseSectionReadSchema,
     CourseSectionUpdateSchema,
     DisciplineCreateSchema,
@@ -457,6 +458,50 @@ class SchedulingService:
         _metric(tenant_id, "scheduling_sections_created", 1)
 
         return CourseSectionReadSchema.model_validate(section)
+
+    async def list_course_sections(
+        self,
+        tenant_id: int,
+        *,
+        page: int,
+        page_size: int,
+        status: SectionStatus | None = None,
+        term_id: int | None = None,
+        course_id: int | None = None,
+    ) -> CourseSectionListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        filters = [CourseSectionModel.tenant_id == tenant_id]
+        if status is not None:
+            filters.append(CourseSectionModel.status == status)
+        if term_id is not None:
+            filters.append(CourseSectionModel.term_id == term_id)
+        if course_id is not None:
+            filters.append(CourseSectionModel.course_id == course_id)
+
+        total = self.db.execute(
+            select(func.count()).select_from(CourseSectionModel).where(and_(*filters))
+        ).scalar_one()
+
+        rows = self.db.execute(
+            select(CourseSectionModel)
+            .where(and_(*filters))
+            .order_by(
+                CourseSectionModel.term_id.desc(),
+                CourseSectionModel.course_id.asc(),
+                CourseSectionModel.section_code.asc(),
+                CourseSectionModel.id.asc(),
+            )
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+
+        return CourseSectionListResponseSchema(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[CourseSectionReadSchema.model_validate(row) for row in rows],
+        )
 
     async def get_course_section(
         self,

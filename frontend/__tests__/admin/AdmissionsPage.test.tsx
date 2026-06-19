@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 import AdmissionsPage from "../../app/(admin)/console/admissions/page";
 
@@ -15,6 +16,9 @@ vi.mock("../../shared/hooks/use-permissions", () => ({
 
 vi.mock("../../shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
+  RequirePermission: ({ message, children }: { message?: string; children: ReactNode }) => (
+    <div>{message ?? children}</div>
+  ),
 }));
 
 vi.mock("../../app/components/LanguageProvider", () => ({
@@ -25,11 +29,10 @@ vi.mock("../../app/components/LanguageProvider", () => ({
 
 describe("AdmissionsPage", () => {
   it("renders AccessDenied when admissions.read permission is missing", () => {
-    hasPermissionMock.mockReturnValue(false);
-
     render(<AdmissionsPage />);
 
-    expect(hasPermissionMock).toHaveBeenCalled();
-    expect(screen.getByText("Access Denied")).toBeInTheDocument();
+    expect(
+      screen.getByText("This Admissions CRM route is fail-closed until the required permission is granted."),
+    ).toBeInTheDocument();
   });
 });

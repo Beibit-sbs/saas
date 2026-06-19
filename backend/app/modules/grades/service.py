@@ -36,6 +36,10 @@ from app.modules.grades.schemas import (
     GradeListResponseSchema,
     GradeReadSchema,
     GradeSubmitSchema,
+    GradingScaleCreateSchema,
+    GradingScaleItemReadSchema,
+    GradingScaleListResponseSchema,
+    GradingScaleReadSchema,
     StudentTranscriptSchema,
     TranscriptItemSchema,
 )
@@ -258,6 +262,20 @@ class GradeLifecycleService:
         if not items:
             raise DomainValidationError(f"Grading scale {grading_scale_id} has no scale items")
         return items
+
+    @staticmethod
+    def _scale_read_schema(
+        scale: GradingScaleModel,
+        items: list[GradingScaleItemModel],
+    ) -> GradingScaleReadSchema:
+        return GradingScaleReadSchema(
+            id=scale.id,
+            tenant_id=scale.tenant_id,
+            name=scale.name,
+            description=scale.description,
+            is_active=bool(scale.is_active),
+            items=[GradingScaleItemReadSchema.model_validate(item) for item in items],
+        )
 
     def _load_grade_submission(self, tenant_id: int, enrollment_id: int) -> GradeSubmissionModel | None:
         return self.db.execute(
@@ -519,6 +537,73 @@ class GradeLifecycleService:
 
         return MutationResult(entity=GradeReadSchema.model_validate(submission))
 
+    async def create_grading_scale(
+        self,
+        tenant_id: int,
+        *,
+        request: GradingScaleCreateSchema,
+        actor_id: str,
+    ) -> GradingScaleReadSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        if not str(actor_id or "").strip():
+            raise PermissionError("actor is required for grading scale creation")
+
+        scale = GradingScaleModel(
+            tenant_id=tenant_id,
+            name=request.name,
+            description=request.description,
+            is_active=request.is_active,
+        )
+        self.db.add(scale)
+        self.db.flush()
+
+        items = [
+            GradingScaleItemModel(
+                tenant_id=tenant_id,
+                scale_id=scale.id,
+                grade_code=item.grade_code,
+                grade_points=self._quantize(item.grade_points),
+                min_percentage=self._quantize(item.min_percentage),
+                max_percentage=self._quantize(item.max_percentage),
+            )
+            for item in request.items
+        ]
+        self.db.add_all(items)
+        self.db.flush()
+
+        _audit(
+            actor=actor_id,
+            action=build_audit_action("grades", "grading_scale", "created"),
+            path="/internal/grades/scales/create",
+            entity="grading_scale",
+            metadata={
+                "resource_id": str(scale.id),
+                "name": scale.name,
+                "item_count": len(items),
+            },
+            tenant_id=tenant_id,
+        )
+        log_data_access_event(
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            resource="grading_scale",
+            resource_id=scale.id,
+            action="write",
+            result="success",
+        )
+
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise DomainValidationError("Unable to create grading scale due to constraint violation") from exc
+
+        self.db.refresh(scale)
+        for item in items:
+            self.db.refresh(item)
+
+        return self._scale_read_schema(scale, items)
+
     async def change_grade(
         self,
         tenant_id: int,
@@ -723,6 +808,140 @@ class GradeLifecycleService:
             page=page,
             page_size=page_size,
             items=[GradeReadSchema.model_validate(item) for item in items],
+        )
+
+    async def list_tenant_grades(
+        self,
+        tenant_id: int,
+        *,
+        student_profile_id: int | None = None,
+        course_id: int | None = None,
+        term_id: int | None = None,
+        section_id: int | None = None,
+        page: int = 1,
+        page_size: int = 20,
+        actor_id: str | None = None,
+    ) -> GradeListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        filters = [GradeSubmissionModel.tenant_id == tenant_id]
+        enrollment_filters = [EnrollmentModel.tenant_id == tenant_id]
+        if student_profile_id is not None:
+            enrollment_filters.append(EnrollmentModel.student_profile_id == student_profile_id)
+        if course_id is not None:
+            enrollment_filters.append(EnrollmentModel.course_id == course_id)
+        if term_id is not None:
+            enrollment_filters.append(EnrollmentModel.term_id == term_id)
+        if section_id is not None:
+            enrollment_filters.append(EnrollmentModel.section_id == section_id)
+
+        total = self.db.execute(
+            select(func.count())
+            .select_from(GradeSubmissionModel)
+            .join(
+                EnrollmentModel,
+                and_(
+                    GradeSubmissionModel.tenant_id == EnrollmentModel.tenant_id,
+                    GradeSubmissionModel.enrollment_id == EnrollmentModel.id,
+                ),
+            )
+            .where(and_(*filters, *enrollment_filters))
+        ).scalar_one()
+
+        items = self.db.execute(
+            select(GradeSubmissionModel)
+            .join(
+                EnrollmentModel,
+                and_(
+                    GradeSubmissionModel.tenant_id == EnrollmentModel.tenant_id,
+                    GradeSubmissionModel.enrollment_id == EnrollmentModel.id,
+                ),
+            )
+            .where(and_(*filters, *enrollment_filters))
+            .order_by(desc(GradeSubmissionModel.submitted_at), desc(GradeSubmissionModel.id))
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="grade",
+                resource_id=tenant_id,
+                action="read",
+                result="success",
+            )
+
+        return GradeListResponseSchema(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[GradeReadSchema.model_validate(item) for item in items],
+        )
+
+    async def list_grading_scales(
+        self,
+        tenant_id: int,
+        *,
+        active_only: bool = True,
+        page: int = 1,
+        page_size: int = 100,
+        actor_id: str | None = None,
+    ) -> GradingScaleListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        filters = [GradingScaleModel.tenant_id == tenant_id]
+        if active_only:
+            filters.append(GradingScaleModel.is_active.is_(True))
+
+        total = self.db.execute(
+            select(func.count()).select_from(GradingScaleModel).where(and_(*filters))
+        ).scalar_one()
+
+        scales = self.db.execute(
+            select(GradingScaleModel)
+            .where(and_(*filters))
+            .order_by(GradingScaleModel.name, GradingScaleModel.id)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+
+        scale_ids = [scale.id for scale in scales]
+        item_map: dict[int, list[GradingScaleItemModel]] = {scale_id: [] for scale_id in scale_ids}
+        if scale_ids:
+            items = self.db.execute(
+                select(GradingScaleItemModel)
+                .where(
+                    and_(
+                        GradingScaleItemModel.tenant_id == tenant_id,
+                        GradingScaleItemModel.scale_id.in_(scale_ids),
+                    )
+                )
+                .order_by(
+                    GradingScaleItemModel.scale_id,
+                    GradingScaleItemModel.max_percentage.desc(),
+                    GradingScaleItemModel.id,
+                )
+            ).scalars().all()
+            for item in items:
+                item_map.setdefault(item.scale_id, []).append(item)
+
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="grading_scale",
+                resource_id=tenant_id,
+                action="read",
+                result="success",
+            )
+
+        return GradingScaleListResponseSchema(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[self._scale_read_schema(scale, item_map.get(scale.id, [])) for scale in scales],
         )
 
     async def calculate_student_gpa(self, tenant_id: int, *, student_profile_id: int) -> Decimal | None:

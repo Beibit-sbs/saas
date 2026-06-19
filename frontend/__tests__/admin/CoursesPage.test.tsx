@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import CoursesPage from "../../app/(admin)/console/courses/page";
 
 const useCoursesMock = vi.fn();
+const useProgramsMock = vi.fn();
 let allowAccess = true;
 
 vi.mock("../../modules/courses/hooks", () => ({
@@ -11,6 +12,10 @@ vi.mock("../../modules/courses/hooks", () => ({
   useCreateCourse: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateCourse: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteCourse: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("../../modules/programs/hooks", () => ({
+  usePrograms: (...args: unknown[]) => useProgramsMock(...args),
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
@@ -76,12 +81,39 @@ const COURSES = [
   },
 ];
 
+const PROGRAMS = [
+  {
+    id: 1,
+    tenant_id: "1",
+    program_code: "CS-BSC",
+    title: "Computer Science",
+    degree_type: "Bachelor",
+    faculty: "ENG - Faculty of Engineering",
+    status: "active",
+  },
+  {
+    id: 2,
+    tenant_id: "1",
+    program_code: "MATH-MSC",
+    title: "Applied Mathematics",
+    degree_type: "Master",
+    faculty: "SCI - Faculty of Science",
+    status: "active",
+  },
+];
+
 describe("CoursesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     allowAccess = true;
     useCoursesMock.mockReturnValue({
       data: { courses: COURSES },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useProgramsMock.mockReturnValue({
+      data: { programs: PROGRAMS },
       isLoading: false,
       error: null,
       refetch: vi.fn(),
@@ -100,6 +132,16 @@ describe("CoursesPage", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /delete|удалить|жою/i }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("uses programs as choices when creating a course", () => {
+    render(<CoursesPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /add course/i }));
+
+    expect(screen.getByTestId("course-program-select")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /CS-BSC - Computer Science/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /MATH-MSC - Applied Mathematics/ })).toBeInTheDocument();
   });
 
   it("shows empty state when no courses", () => {

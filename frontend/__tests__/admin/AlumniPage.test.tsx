@@ -8,8 +8,50 @@ let allowAccess = true;
 
 vi.mock("../../modules/alumni/hooks", () => ({
   useAlumniRecords: (...args: unknown[]) => useAlumniMock(...args),
+  useAlumniBrainContext: () => ({
+    data: {
+      module: "alumni",
+      tenant_id: 1,
+      total_records: 1,
+      by_status: { active: 1, engaged: 0, donor: 0, inactive: 0 },
+      by_engagement_type: { event: 1 },
+      inactive_count: 0,
+      risk_level: "low",
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
   useCreateAlumniRecord: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateAlumniStatus: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("../../modules/students/hooks", () => ({
+  useStudents: () => ({
+    data: {
+      items: [
+        {
+          id: "510",
+          student_number: "S-510",
+          first_name: "Aida",
+          last_name: "Graduate",
+          email: "aida@example.edu",
+          status: "graduated",
+          current_status: "graduated",
+          tenant_id: "1",
+          program: null,
+          enrollment_year: null,
+          version: 2,
+          created_at: "2026-01-01T00:00:00Z",
+          updated_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+      total: 1,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
@@ -93,6 +135,13 @@ describe("AlumniPage", () => {
   it("renders create button", () => {
     render(<AlumniPage />);
     expect(screen.getByTestId("create-alumni-btn")).toBeInTheDocument();
+  });
+
+  it("renders status filter and lifecycle actions", () => {
+    render(<AlumniPage />);
+    expect(screen.getByTestId("alumni-status-filter")).toBeInTheDocument();
+    expect(screen.getByText("Mark donor")).toBeInTheDocument();
+    expect(screen.getByText("Mark inactive")).toBeInTheDocument();
   });
 
   it("shows access denied without permission", () => {

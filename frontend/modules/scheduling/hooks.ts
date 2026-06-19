@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { schedulingApi } from "./api";
 import type {
   AttendanceStatus,
+  CreateLessonInstancePayload,
   CourseSection,
   CreateSectionPayload,
 } from "./types";
@@ -64,6 +65,17 @@ export function useSectionLessons(sectionId: string) {
     queryKey: [LESSONS_KEY, sectionId],
     queryFn: () => schedulingApi.listSectionLessons(sectionId),
     enabled: !!sectionId,
+  });
+}
+
+export function useCreateSectionLesson(sectionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateLessonInstancePayload) =>
+      schedulingApi.createSectionLesson(sectionId, payload),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: [LESSONS_KEY, sectionId] });
+    },
   });
 }
 

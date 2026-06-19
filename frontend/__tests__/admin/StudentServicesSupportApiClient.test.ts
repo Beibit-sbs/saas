@@ -25,12 +25,14 @@ describe('Student Services Support API client', () => {
     await studentServicesSupportApi.listSupportCases();
     await studentServicesSupportApi.getSupportCase(11);
     await studentServicesSupportApi.getDashboardSummary();
+    await studentServicesSupportApi.getFinanceHardshipReviewerQueue();
 
     expect(client.apiGet).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.requests);
     expect(client.apiGet).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.requestById(10));
     expect(client.apiGet).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.cases);
     expect(client.apiGet).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.caseById(11));
     expect(client.apiGet).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.dashboardSummary);
+    expect(client.apiGet).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipReviewerQueue);
   });
 
   it('maps create endpoints', async () => {
@@ -39,6 +41,17 @@ describe('Student Services Support API client', () => {
     await studentServicesSupportApi.addSupportCaseNote(11, { note: 'n1' });
     await studentServicesSupportApi.attachSupportEvidenceMetadata(11, { evidence_type: 'document_metadata' });
     await studentServicesSupportApi.createHardshipRequest({ request_id: 10 });
+    await studentServicesSupportApi.createHardshipRequestFromFinanceHandoff({ student_id: 'S-1', receivables_metadata_id: 5 });
+    await studentServicesSupportApi.intakeFinanceHardshipEvidenceGap(22, { evidence_type: 'balance_statement', satisfies_gap: 'balance_statement' });
+    await studentServicesSupportApi.recordFinanceHardshipHumanReviewOutcomeNote(22, {
+      outcome_label: 'support_plan_recommended',
+      note: 'Human review metadata only.',
+    });
+    await studentServicesSupportApi.createFinanceHardshipFinanceOfficeReferral(22, {
+      referral_target: 'student_finance_office',
+      referral_reason: 'manual follow-up',
+      referral_priority: 'high',
+    });
     await studentServicesSupportApi.createAccommodationRequest({ request_id: 10 });
     await studentServicesSupportApi.createComplaint({ complaint_summary: 'summary' });
     await studentServicesSupportApi.createEscalation({ case_id: 11, reason: 'reason' });
@@ -48,6 +61,17 @@ describe('Student Services Support API client', () => {
     expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.caseNotes(11), { note: 'n1' });
     expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.caseEvidence(11), { evidence_type: 'document_metadata' });
     expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.hardship, { request_id: 10 });
+    expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.hardshipFromFinanceHandoff, { student_id: 'S-1', receivables_metadata_id: 5 });
+    expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipEvidenceGap(22), { evidence_type: 'balance_statement', satisfies_gap: 'balance_statement' });
+    expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipHumanReviewOutcomeNote(22), {
+      outcome_label: 'support_plan_recommended',
+      note: 'Human review metadata only.',
+    });
+    expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipFinanceOfficeReferral(22), {
+      referral_target: 'student_finance_office',
+      referral_reason: 'manual follow-up',
+      referral_priority: 'high',
+    });
     expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.accommodations, { request_id: 10 });
     expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.complaints, { complaint_summary: 'summary' });
     expect(client.apiPost).toHaveBeenCalledWith(STUDENT_SERVICES_SUPPORT_API_PATHS.escalations, { case_id: 11, reason: 'reason' });

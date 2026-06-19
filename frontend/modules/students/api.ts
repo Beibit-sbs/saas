@@ -1,6 +1,15 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/shared/api/client";
 import type { PaginatedResponse } from "@/shared/api/types";
-import type { CreateStudentPayload, Student, UpdateStudentPayload } from "./types";
+import type {
+  BindStudentProgramPayload,
+  ChangeStudentStatusPayload,
+  CreateStudentPayload,
+  Student,
+  StudentProgramBinding,
+  StudentProgramBindingMutationResponse,
+  StudentProfileMutationResponse,
+  UpdateStudentPayload,
+} from "./types";
 
 const BASE = "/api/admin/students";
 
@@ -20,5 +29,15 @@ export const studentsApi = {
   update: (id: string, payload: UpdateStudentPayload) =>
     apiPatch<Student>(`${BASE}/${id}`, payload),
 
+  changeStatus: (id: string, payload: ChangeStudentStatusPayload) =>
+    apiPatch<StudentProfileMutationResponse>(`${BASE}/${id}/status`, payload)
+      .then((response) => response.student),
+
   delete: (id: string) => apiDelete<void>(`${BASE}/${id}`),
+
+  getActiveProgram: (id: string) => apiGet<StudentProgramBinding | null>(`${BASE}/${id}/program`),
+
+  bindProgram: (id: string, payload: BindStudentProgramPayload) =>
+    apiPost<StudentProgramBindingMutationResponse>(`${BASE}/${id}/program-bindings`, payload)
+      .then((response) => response.binding),
 };

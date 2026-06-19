@@ -35,6 +35,18 @@ function isPlatformAdminUsername(value: string): boolean {
   return normalized.startsWith("local/") || normalized === "platform_admin";
 }
 
+function normalizeBackendLogin(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) {
+    return "";
+  }
+  if (normalized.toLowerCase().startsWith("local/")) {
+    const stripped = normalized.slice(6).trim();
+    return stripped || normalized;
+  }
+  return normalized;
+}
+
 function extractLoginDomain(value: string): string | null {
   const normalized = value.trim().toLowerCase();
   if (!normalized || isPlatformAdminUsername(normalized)) {
@@ -75,7 +87,6 @@ export default function LoginPage() {
   const [tenantOptions, setTenantOptions] = useState<LoginTenantOption[]>([]);
   const [domainAutoDetectEnabled, setDomainAutoDetectEnabled] = useState(false);
   const [defaultTenantId] = useState(() => getDefaultTenantId());
-  const [technicalTenantId, setTechnicalTenantId] = useState("");
   const [tenantError, setTenantError] = useState<string | null>(null);
   const [tenantSelectionState, setTenantSelectionState] = useState<"default" | "restored" | "manual">("default");
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -306,19 +317,17 @@ export default function LoginPage() {
     const platformAdminLogin = isPlatformAdminUsername(data.username);
     const selectedFormTenantId = String(data.tenantId ?? "").trim();
     const effectiveTenantId = platformAdminLogin
-      ? null
-      : (technicalTenantId.trim() || selectedFormTenantId || String(selectedTenantId).trim());
+      ? "1"
+      : (selectedFormTenantId || String(selectedTenantId).trim());
 
-    if (!platformAdminLogin) {
-      if (!effectiveTenantId) {
-        setTenantError(t("auth.universityRequired"));
-        return;
-      }
+    if (!effectiveTenantId) {
+      setTenantError(t("auth.universityRequired"));
+      return;
+    }
 
-      if (!/^\d+$/.test(effectiveTenantId)) {
-        setTenantError(t("auth.technicalTenantInvalid"));
-        return;
-      }
+    if (!/^\d+$/.test(effectiveTenantId)) {
+      setTenantError(t("auth.technicalTenantInvalid"));
+      return;
     }
 
     setTenantError(null);
@@ -328,9 +337,13 @@ export default function LoginPage() {
       const csrfToken = await fetchCsrfToken();
 
       const payload: Record<string, unknown> = {
-        username: data.username,
+        login: normalizeBackendLogin(data.username),
         password: data.password,
       };
+
+      if (platformAdminLogin) {
+        payload.provider = "local";
+      }
 
       if (mfaRequired && data.mfaCode?.trim()) {
         payload.mfa_code = data.mfaCode.trim();
@@ -348,6 +361,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
+          "X-Tenant-ID": effectiveTenantId,
         },
         credentials: "include",
         body: JSON.stringify(payload),
@@ -443,27 +457,6 @@ export default function LoginPage() {
                 />
                 <p className="text-xs text-muted-foreground">{tenantHelperText}</p>
                 {tenantError ? <p className="text-xs text-destructive">{tenantError}</p> : null}
-                <details className="mt-1 text-xs text-muted-foreground">
-                  <summary className="cursor-pointer select-none text-[11px] text-muted-foreground/80 hover:text-muted-foreground">
-                    {t("auth.technicalTenantToggle")}
-                  </summary>
-                  <div className="mt-2 space-y-1.5 rounded-md border border-dashed border-muted-foreground/30 bg-muted/20 px-3 py-2">
-                    <Label htmlFor="technical-tenant-id" className="text-xs text-muted-foreground">
-                      {t("auth.technicalTenantLabel")}
-                    </Label>
-                    <Input
-                      id="technical-tenant-id"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      value={technicalTenantId}
-                      onChange={(event) => {
-                        setTechnicalTenantId(event.target.value);
-                        setTenantError(null);
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground">{t("auth.technicalTenantHelp")}</p>
-                  </div>
-                </details>
               </div>
             ) : (
               <p className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">

@@ -16,6 +16,18 @@ function getRequestUrl(input: RequestInfo | URL): string {
   return String(input);
 }
 
+function getHeader(init: RequestInit, name: string): string | null {
+  const headers = init.headers;
+  if (!headers) return null;
+  if (headers instanceof Headers) return headers.get(name);
+  if (Array.isArray(headers)) {
+    const found = headers.find(([key]) => key.toLowerCase() === name.toLowerCase());
+    return found?.[1] ?? null;
+  }
+  const record = headers as Record<string, string>;
+  return record[name] ?? record[name.toLowerCase()] ?? null;
+}
+
 const replaceMock = vi.fn();
 const refreshMock = vi.fn();
 const toastMock = vi.fn();
@@ -140,6 +152,7 @@ describe("LoginPage tenant UX", () => {
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({ login: "root", password: "secret", provider: "local" });
+    expect(getHeader(init, "X-Tenant-ID")).toBe("1");
   });
 
   it("loads directory and submits selected university", async () => {
@@ -186,6 +199,7 @@ describe("LoginPage tenant UX", () => {
       password: "secret",
       tenant_id: 2,
     });
+    expect(getHeader(init, "X-Tenant-ID")).toBe("2");
   });
 
   it("restores the remembered tenant and allows manual fallback selection", async () => {
@@ -232,6 +246,7 @@ describe("LoginPage tenant UX", () => {
       password: "secret",
       tenant_id: 1,
     });
+    expect(getHeader(init, "X-Tenant-ID")).toBe("1");
     expect(window.localStorage.getItem("login.lastTenantId")).toBe("1");
   });
 
@@ -287,5 +302,6 @@ describe("LoginPage tenant UX", () => {
       tenant_id: 2,
       mfa_code: "123456",
     });
+    expect(getHeader(secondInit, "X-Tenant-ID")).toBe("2");
   });
 });

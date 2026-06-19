@@ -12,12 +12,15 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
+import { usePermissions } from "@/shared/hooks/use-permissions";
 import {
+  useAlumniBrainContext,
   useAlumniRecords,
   useCreateAlumniRecord,
   useUpdateAlumniStatus,
 } from "@/modules/alumni/hooks";
-import type { AlumniRecord } from "@/modules/alumni/types";
+import type { AlumniRecord, AlumniStatus } from "@/modules/alumni/types";
+import { useStudents } from "@/modules/students/hooks";
 
 interface AlumniFormState {
   student_id: string;
@@ -44,15 +47,39 @@ const STATUS_COLORS: Record<string, string> = {
   inactive: "bg-gray-100 text-gray-700",
 };
 
+const STATUS_OPTIONS: Array<AlumniStatus | "all"> = ["all", "active", "engaged", "donor", "inactive"];
+
+const STATUS_TRANSITIONS: Record<AlumniStatus, AlumniStatus[]> = {
+  active: ["engaged", "donor", "inactive"],
+  engaged: ["donor", "inactive"],
+  donor: ["engaged", "inactive"],
+  inactive: ["active"],
+};
+
+const STATUS_ACTION_LABELS: Record<AlumniStatus, string> = {
+  active: "Reactivate",
+  engaged: "Mark engaged",
+  donor: "Mark donor",
+  inactive: "Mark inactive",
+};
+
 export default function AlumniPage() {
   const { getHandlers } = useMutationFeedback();
+  const { hasPermission } = usePermissions();
   const [form, setForm] = useState<AlumniFormState>(EMPTY_FORM);
+  const [statusFilter, setStatusFilter] = useState<AlumniStatus | "all">("all");
 
-  const { data, isLoading, error, refetch } = useAlumniRecords();
+  const canWrite = hasPermission(PERMISSIONS.ALUMNI_WRITE);
+  const { data, isLoading, error, refetch } = useAlumniRecords(
+    statusFilter === "all" ? undefined : statusFilter,
+  );
+  const brainContext = useAlumniBrainContext();
+  const graduatedStudentsQuery = useStudents({ page: 1, page_size: 200, status: "graduated" });
   const createRecord = useCreateAlumniRecord();
   const updateStatus = useUpdateAlumniStatus();
 
   const isSubmitting = createRecord.isPending || updateStatus.isPending;
+  const graduatedStudents = graduatedStudentsQuery.data?.items ?? [];
   const canCreate = useMemo(() => {
     const studentId = Number(form.student_id);
     const year = Number(form.graduation_year);
@@ -97,23 +124,37 @@ export default function AlumniPage() {
     {
       key: "actions",
       header: "",
-      width: "170px",
-      cell: (row) => (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isSubmitting || row.status === "engaged"}
-          onClick={(event) => {
-            event.stopPropagation();
-            updateStatus.mutate(
-              { recordId: row.id, payload: { status: "engaged" } },
-              getHandlers({ successTitle: "Alumni engaged" }),
-            );
-          }}
-        >
-          Mark engaged
-        </Button>
-      ),
+      width: "330px",
+      cell: (row) => {
+        const nextStatuses = STATUS_TRANSITIONS[row.status] ?? [];
+        return (
+          <div className="flex flex-wrap gap-2">
+            {nextStatuses.map((nextStatus) => (
+              <Button
+                key={nextStatus}
+                variant={nextStatus === "inactive" ? "outline" : "default"}
+                size="sm"
+                disabled={!canWrite || isSubmitting}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  updateStatus.mutate(
+                    {
+                      recordId: row.id,
+                      payload: {
+                        status: nextStatus,
+                        notes: `Status changed from ${row.status} to ${nextStatus}.`,
+                      },
+                    },
+                    getHandlers({ successTitle: "Alumni status updated" }),
+                  );
+                }}
+              >
+                {STATUS_ACTION_LABELS[nextStatus]}
+              </Button>
+            ))}
+          </div>
+        );
+      },
     },
   ];
 
@@ -126,15 +167,50 @@ export default function AlumniPage() {
           icon={GraduationCap}
         />
 
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-muted-foreground">Records</p>
+            <p className="text-xl font-semibold">{brainContext.data?.total_records ?? 0}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-muted-foreground">Engaged</p>
+            <p className="text-xl font-semibold">{brainContext.data?.by_status?.engaged ?? 0}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-muted-foreground">Donors</p>
+            <p className="text-xl font-semibold">{brainContext.data?.by_status?.donor ?? 0}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-muted-foreground">Risk</p>
+            <p className="text-xl font-semibold capitalize">{brainContext.data?.risk_level ?? "low"}</p>
+          </div>
+        </div>
+
         <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-3">
           <div className="space-y-1">
-            <Label htmlFor="student-id">Student ID</Label>
-            <Input
-              id="student-id"
-              value={form.student_id}
-              onChange={(e) => setForm((prev) => ({ ...prev, student_id: e.target.value }))}
-              placeholder="510"
-            />
+            <Label htmlFor="student-id">Graduated student</Label>
+            {graduatedStudents.length > 0 ? (
+              <select
+                id="student-id"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={form.student_id}
+                onChange={(e) => setForm((prev) => ({ ...prev, student_id: e.target.value }))}
+              >
+                <option value="">Select graduate</option>
+                {graduatedStudents.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.student_number} / {student.first_name} {student.last_name} (#{student.id})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                id="student-id"
+                value={form.student_id}
+                onChange={(e) => setForm((prev) => ({ ...prev, student_id: e.target.value }))}
+                placeholder="510"
+              />
+            )}
           </div>
           <div className="space-y-1">
             <Label htmlFor="graduation-year">Graduation year</Label>
@@ -186,7 +262,7 @@ export default function AlumniPage() {
             <Button
               size="sm"
               data-testid="create-alumni-btn"
-              disabled={!canCreate || isSubmitting}
+              disabled={!canWrite || !canCreate || isSubmitting}
               onClick={() => {
                 createRecord.mutate(
                   {
@@ -210,6 +286,20 @@ export default function AlumniPage() {
               Create alumni record
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2" data-testid="alumni-status-filter">
+          {STATUS_OPTIONS.map((status) => (
+            <Button
+              key={status}
+              type="button"
+              size="sm"
+              variant={statusFilter === status ? "default" : "outline"}
+              onClick={() => setStatusFilter(status)}
+            >
+              {status === "all" ? "All" : status}
+            </Button>
+          ))}
         </div>
 
         <DataTable

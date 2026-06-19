@@ -27,6 +27,9 @@ from app.modules.enrollments.models import (
     EnrollmentStatusHistoryModel,
 )
 from app.modules.enrollments.schemas import (
+    AcademicTermCreateSchema,
+    AcademicTermListResponseSchema,
+    AcademicTermReadSchema,
     EnrollmentConsistencyIssueSchema,
     EnrollmentConsistencyReportSchema,
     EnrollmentCreateSchema,
@@ -145,6 +148,89 @@ class EnrollmentLifecycleService:
 
     def __init__(self, db_session: Session):
         self.db = db_session
+
+    async def create_academic_term(
+        self,
+        tenant_id: int,
+        request: AcademicTermCreateSchema,
+        actor_id: str,
+    ) -> AcademicTermReadSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="enrollments.term.create")
+
+        term = AcademicTermModel(
+            tenant_id=tenant_id,
+            term_code=request.term_code.strip(),
+            term_name=request.term_name.strip(),
+            start_date=request.start_date,
+            end_date=request.end_date,
+            add_drop_deadline=request.add_drop_deadline,
+            status=request.status,
+            metadata_json=request.metadata_json,
+        )
+        self.db.add(term)
+        self.db.flush()
+        self.db.refresh(term)
+
+        _audit(
+            actor=actor_id,
+            action=build_audit_action("enrollments", "academic_term", "created"),
+            path=f"/internal/enrollments/academic-terms/{term.id}",
+            entity="academic_term",
+            metadata={
+                "resource_id": str(term.id),
+                "term_code": term.term_code,
+                "term_name": term.term_name,
+                "status": term.status,
+            },
+            tenant_id=tenant_id,
+        )
+
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise DomainValidationError(
+                "Unable to create academic term due to constraint violation"
+            ) from exc
+
+        return AcademicTermReadSchema.model_validate(term)
+
+    async def list_academic_terms(
+        self,
+        tenant_id: int,
+        *,
+        page: int,
+        page_size: int,
+        status: str | None = None,
+    ) -> AcademicTermListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        filters = [AcademicTermModel.tenant_id == tenant_id]
+        if status is not None:
+            filters.append(AcademicTermModel.status == status)
+
+        total = self.db.execute(
+            select(func.count()).select_from(AcademicTermModel).where(and_(*filters))
+        ).scalar_one()
+        rows = self.db.execute(
+            select(AcademicTermModel)
+            .where(and_(*filters))
+            .order_by(
+                AcademicTermModel.start_date.desc().nullslast(),
+                AcademicTermModel.term_code.desc(),
+                AcademicTermModel.id.desc(),
+            )
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+
+        return AcademicTermListResponseSchema(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[AcademicTermReadSchema.model_validate(row) for row in rows],
+        )
 
     def _load_student_profile(self, tenant_id: int, student_profile_id: int) -> StudentProfileModel:
         profile = self.db.execute(
@@ -664,6 +750,61 @@ class EnrollmentLifecycleService:
                 tenant_id=tenant_id,
                 resource="enrollment",
                 resource_id=student_profile_id,
+                action="read",
+                result="success",
+            )
+
+        return EnrollmentListResponseSchema(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[EnrollmentReadSchema.model_validate(item) for item in items],
+        )
+
+    async def list_tenant_enrollments(
+        self,
+        tenant_id: int,
+        *,
+        actor_id: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+        status: EnrollmentStatus | None = None,
+        student_profile_id: int | None = None,
+        course_id: int | None = None,
+        term_id: int | None = None,
+        section_id: int | None = None,
+    ) -> EnrollmentListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        filters = [EnrollmentModel.tenant_id == tenant_id]
+        if status is not None:
+            filters.append(EnrollmentModel.enrollment_status == status)
+        if student_profile_id is not None:
+            filters.append(EnrollmentModel.student_profile_id == student_profile_id)
+        if course_id is not None:
+            filters.append(EnrollmentModel.course_id == course_id)
+        if term_id is not None:
+            filters.append(EnrollmentModel.term_id == term_id)
+        if section_id is not None:
+            filters.append(EnrollmentModel.section_id == section_id)
+
+        total = self.db.execute(
+            select(func.count()).select_from(EnrollmentModel).where(and_(*filters))
+        ).scalar_one()
+        items = self.db.execute(
+            select(EnrollmentModel)
+            .where(and_(*filters))
+            .order_by(desc(EnrollmentModel.enrolled_at), desc(EnrollmentModel.id))
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="enrollment",
+                resource_id=section_id or course_id or student_profile_id or tenant_id,
                 action="read",
                 result="success",
             )

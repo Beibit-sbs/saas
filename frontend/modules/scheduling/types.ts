@@ -1,26 +1,33 @@
 export interface CourseSection {
-  id: string;
-  code: string;
-  course_name: string;
-  instructor: string | null;
-  capacity: number;
-  enrolled_count: number;
-  semester: string;
-  schedule: string | null;
-  room: string | null;
-  status: "open" | "closed" | "cancelled";
-  tenant_id: string;
+  id: string | number;
+  tenant_id: string | number;
+  course_id?: number;
+  term_id?: number;
+  section_code?: string;
+  instructor_id?: string | null;
+  max_capacity?: number;
+  version?: number;
+  created_at?: string;
+  updated_at?: string;
+
+  // Legacy display fields used by the current scheduling console shell.
+  code?: string;
+  course_name?: string;
+  instructor?: string | null;
+  capacity?: number;
+  enrolled_count?: number;
+  semester?: string;
+  schedule?: string | null;
+  room?: string | null;
+  status: "open" | "closed" | "planned" | "scheduled" | "cancelled";
 }
 
 export interface CreateSectionPayload {
-  code: string;
-  course_name: string;
-  instructor?: string;
-  capacity: number;
-  semester: string;
-  schedule?: string;
-  room?: string;
-  tenant_id: string;
+  course_id: number;
+  term_id: number;
+  section_code: string;
+  instructor_id?: string | null;
+  max_capacity: number;
 }
 
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
@@ -49,6 +56,13 @@ export interface LessonAttendanceUpsertPayload {
 }
 
 export type LessonStatus = "planned" | "completed" | "cancelled";
+
+export interface CreateLessonInstancePayload {
+  scheduled_date: string;
+  topic_title: string;
+  notes?: string | null;
+  metadata_json?: Record<string, unknown>;
+}
 
 export interface LessonInstance {
   id: number;

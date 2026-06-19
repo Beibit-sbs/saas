@@ -2,7 +2,51 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ProgramRequirementItemCreateSchema(BaseModel):
+    course_id: int = Field(gt=0)
+    credits: int = Field(ge=0)
+    required: bool = True
+
+
+class ProgramRequirementCreateSchema(BaseModel):
+    program_id: int = Field(gt=0)
+    name: str = Field(min_length=1, max_length=255)
+    minimum_credits: int = Field(ge=0)
+    minimum_gpa: Decimal = Field(default=Decimal("0"), ge=0)
+    is_active: bool = True
+    items: list[ProgramRequirementItemCreateSchema] = Field(min_length=1)
+
+
+class ProgramRequirementItemReadSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tenant_id: int
+    requirement_id: int
+    course_id: int
+    required: bool
+    credits: int
+
+
+class ProgramRequirementReadSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tenant_id: int
+    program_id: int
+    name: str
+    minimum_credits: int
+    minimum_gpa: Decimal
+    is_active: bool
+    items: list[ProgramRequirementItemReadSchema]
+
+
+class ProgramRequirementListResponseSchema(BaseModel):
+    total: int
+    items: list[ProgramRequirementReadSchema]
 
 
 class RequirementStatusSchema(BaseModel):

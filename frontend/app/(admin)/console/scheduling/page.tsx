@@ -16,8 +16,17 @@ import {
   useStudentLatestRisk,
   useUpsertLessonAttendance,
   useAttendanceTrends,
+  useCreateSection,
+  useCreateSectionLesson,
 } from "@/modules/scheduling/hooks";
 import { CourseSection } from "@/modules/scheduling/types";
+import { useCourses } from "@/modules/courses/hooks";
+import { Course } from "@/modules/courses/types";
+import { useAcademicTerms, useCreateAcademicTerm } from "@/modules/academic-terms/hooks";
+import { AcademicTerm } from "@/modules/academic-terms/types";
+import { useEnrollments } from "@/modules/enrollments/hooks";
+import { useStudents } from "@/modules/students/hooks";
+import { Student } from "@/modules/students/types";
 import { Calendar } from "lucide-react";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -50,8 +59,8 @@ const FILTER_FIELDS = [
     label: "Status",
     type: "select" as const,
     options: [
-      { label: "Open", value: "open" },
-      { label: "Closed", value: "closed" },
+      { label: "Planned", value: "planned" },
+      { label: "Scheduled", value: "scheduled" },
       { label: "Cancelled", value: "cancelled" },
     ],
   },
@@ -76,6 +85,25 @@ function StudentRiskBadge({ studentProfileId }: { studentProfileId: number }) {
   return <Badge variant="success">Low</Badge>;
 }
 
+function dateInputToIso(value: string) {
+  return value.trim() ? `${value.trim()}T00:00:00Z` : null;
+}
+
+function formatCourseOption(course: Course) {
+  return `${course.course_code} - ${course.title}`;
+}
+
+function formatTermOption(term: AcademicTerm) {
+  return `${term.term_code} - ${term.term_name}`;
+}
+
+function formatStudentOption(student: Student | undefined, fallbackId: string | number | undefined, enrollmentId: string | number) {
+  if (student) {
+    return `${student.student_number} / ${student.first_name} ${student.last_name} / Enrollment #${enrollmentId}`;
+  }
+  return `Student #${fallbackId ?? "-"} / Enrollment #${enrollmentId}`;
+}
+
 export default function SchedulingPage() {
   const { t } = useLanguage();
   const { hasPermission } = usePermissions();
@@ -83,13 +111,25 @@ export default function SchedulingPage() {
   const table = useTableQueryState({ filterKeys: ["semester", "status"] as const, defaultPageSize: 20, defaultSort: { key: "semester", direction: "desc" } });
   const [sectionInput, setSectionInput] = useState("");
   const [activeSectionId, setActiveSectionId] = useState("");
-  const [lessonInput, setLessonInput] = useState("");
   const [activeLessonId, setActiveLessonId] = useState("");
+  const [lessonDate, setLessonDate] = useState("");
+  const [lessonTopic, setLessonTopic] = useState("");
+  const [lessonNotes, setLessonNotes] = useState("");
   const [selectedRiskStudentId, setSelectedRiskStudentId] = useState<number | null>(null);
   const [selectedRiskHistoryPage, setSelectedRiskHistoryPage] = useState(1);
   const [selectedRiskHistorySeverityFilter, setSelectedRiskHistorySeverityFilter] = useState<"all" | "high" | "medium" | "low">("all");
   const [studentInput, setStudentInput] = useState("");
   const [attendanceStatus, setAttendanceStatus] = useState<"present" | "absent" | "late" | "excused">("present");
+  const [termCode, setTermCode] = useState("");
+  const [termName, setTermName] = useState("");
+  const [termStartDate, setTermStartDate] = useState("");
+  const [termEndDate, setTermEndDate] = useState("");
+  const [termAddDropDeadline, setTermAddDropDeadline] = useState("");
+  const [sectionCourseId, setSectionCourseId] = useState("");
+  const [sectionTermId, setSectionTermId] = useState("");
+  const [sectionCode, setSectionCode] = useState("");
+  const [sectionInstructorId, setSectionInstructorId] = useState("");
+  const [sectionMaxCapacity, setSectionMaxCapacity] = useState("30");
 
   const { data, isLoading, error, refetch } = useSections({
     page: table.page,
@@ -121,6 +161,16 @@ export default function SchedulingPage() {
     error: riskSummaryError,
     refetch: refetchRiskSummary,
   } = useInterventionRiskSummary();
+  const coursesQuery = useCourses();
+  const termsQuery = useAcademicTerms({ page: 1, page_size: 100, status: "active" });
+  const studentsQuery = useStudents({ page: 1, page_size: 200, status: "active" });
+  const createTerm = useCreateAcademicTerm();
+  const createSection = useCreateSection();
+  const createLesson = useCreateSectionLesson(activeSectionId.trim());
+  const sectionEnrollments = useEnrollments(
+    { page: 1, page_size: 200, section_id: activeSectionId.trim(), status: "enrolled" },
+    { enabled: !!activeSectionId.trim() },
+  );
   const upsertAttendance = useUpsertLessonAttendance(activeLessonId.trim());
   const trends = useAttendanceTrends(activeSectionId.trim(), 4);
 
@@ -131,25 +181,46 @@ export default function SchedulingPage() {
   }
 
   const columns: Column<CourseSection>[] = [
-    { key: "code", header: "Code", cell: (r) => <code className="text-xs">{r.code}</code>, sortValue: (r) => r.code },
-    { key: "course", header: "Course", cell: (r) => r.course_name, sortValue: (r) => r.course_name.toLowerCase() },
-    { key: "instructor", header: "Instructor", cell: (r) => r.instructor ?? "—", sortValue: (r) => r.instructor ?? "" },
-    { key: "semester", header: "Semester", cell: (r) => r.semester, sortValue: (r) => r.semester },
+    { key: "code", header: "Code", cell: (r) => <code className="text-xs">{r.section_code ?? r.code ?? `#${r.id}`}</code>, sortValue: (r) => r.section_code ?? r.code ?? String(r.id) },
+    { key: "course", header: "Course", cell: (r) => r.course_name ?? `Course #${r.course_id ?? "-"}`, sortValue: (r) => String(r.course_name ?? r.course_id ?? "").toLowerCase() },
+    { key: "instructor", header: "Instructor", cell: (r) => r.instructor ?? r.instructor_id ?? "—", sortValue: (r) => r.instructor ?? r.instructor_id ?? "" },
+    { key: "semester", header: "Term", cell: (r) => r.semester ?? `Term #${r.term_id ?? "-"}`, sortValue: (r) => r.semester ?? r.term_id ?? "" },
     { key: "schedule", header: "Schedule", cell: (r) => r.schedule ?? "—" },
     { key: "room", header: "Room", cell: (r) => r.room ?? "—", sortValue: (r) => r.room ?? "" },
     {
       key: "capacity",
       header: "Capacity",
-      cell: (r) => `${r.enrolled_count} / ${r.capacity}`,
-      sortValue: (r) => r.enrolled_count,
+      cell: (r) => `${r.enrolled_count ?? "—"} / ${r.capacity ?? r.max_capacity ?? "—"}`,
+      sortValue: (r) => r.enrolled_count ?? 0,
     },
     { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
   ];
 
   const canWriteAttendance = hasPermission(PERMISSIONS.SCHEDULING_WRITE);
+  const sectionRows = data?.items ?? [];
+  const courses = coursesQuery.data?.courses ?? [];
+  const terms = termsQuery.data?.items ?? [];
+  const students = studentsQuery.data?.items ?? [];
+  const studentById = new Map(students.map((student) => [String(student.id), student]));
   const parsedStudentId = Number(studentInput.trim());
   const isStudentIdValid = Number.isInteger(parsedStudentId) && parsedStudentId > 0;
   const canSubmitAttendance = canWriteAttendance && !!activeLessonId.trim() && isStudentIdValid;
+  const lessonRows = lessons?.items ?? [];
+  const enrolledStudentRows = sectionEnrollments.data?.items ?? [];
+  const canCreateLesson = canWriteAttendance && !!activeSectionId.trim() && !!lessonDate.trim() && !!lessonTopic.trim();
+  const parsedSectionCourseId = Number(sectionCourseId);
+  const parsedSectionTermId = Number(sectionTermId);
+  const parsedSectionMaxCapacity = Number(sectionMaxCapacity);
+  const canCreateTerm = canWriteAttendance && termCode.trim().length > 0 && termName.trim().length > 0;
+  const canCreateSection =
+    canWriteAttendance &&
+    Number.isInteger(parsedSectionCourseId) &&
+    parsedSectionCourseId > 0 &&
+    Number.isInteger(parsedSectionTermId) &&
+    parsedSectionTermId > 0 &&
+    sectionCode.trim().length > 0 &&
+    Number.isInteger(parsedSectionMaxCapacity) &&
+    parsedSectionMaxCapacity >= 0;
 
   const attendanceRows = attendance?.items ?? [];
   const highSeverityCount = riskSummary?.severity_breakdown.high ?? 0;
@@ -211,7 +282,7 @@ export default function SchedulingPage() {
         columns={columns}
         data={data?.items ?? []}
         isLoading={isLoading}
-        getRowKey={(r) => r.id}
+        getRowKey={(r) => String(r.id)}
         pagination={{ page: table.page, pageSize: table.pageSize, total: data?.total ?? 0 }}
         pageSizeOptions={[10, 20, 50]}
         onPageChange={table.setPage}
@@ -220,6 +291,178 @@ export default function SchedulingPage() {
         onSortChange={table.setSort}
         emptyTitle="No sections found"
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Academic term and section setup</CardTitle>
+          <CardDescription>Create the term and course section that enrollments use.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="academic-term-code">Term code</Label>
+              <Input
+                id="academic-term-code"
+                placeholder="2026-FALL"
+                value={termCode}
+                onChange={(event) => setTermCode(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="academic-term-name">Term name</Label>
+              <Input
+                id="academic-term-name"
+                placeholder="Fall 2026"
+                value={termName}
+                onChange={(event) => setTermName(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="academic-term-start">Start date</Label>
+              <Input
+                id="academic-term-start"
+                type="date"
+                value={termStartDate}
+                onChange={(event) => setTermStartDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="academic-term-end">End date</Label>
+              <Input
+                id="academic-term-end"
+                type="date"
+                value={termEndDate}
+                onChange={(event) => setTermEndDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="academic-term-deadline">Drop deadline</Label>
+              <Input
+                id="academic-term-deadline"
+                type="date"
+                value={termAddDropDeadline}
+                onChange={(event) => setTermAddDropDeadline(event.target.value)}
+              />
+            </div>
+          </div>
+          <Button
+            disabled={!canCreateTerm || createTerm.isPending}
+            onClick={() =>
+              createTerm.mutate(
+                {
+                  term_code: termCode.trim(),
+                  term_name: termName.trim(),
+                  start_date: dateInputToIso(termStartDate),
+                  end_date: dateInputToIso(termEndDate),
+                  add_drop_deadline: dateInputToIso(termAddDropDeadline),
+                  status: "active",
+                  metadata_json: { source: "admin_scheduling_page" },
+                },
+                {
+                  ...getHandlers({ successTitle: "Academic term created" }),
+                  onSuccess: () => {
+                    setTermCode("");
+                    setTermName("");
+                    setTermStartDate("");
+                    setTermEndDate("");
+                    setTermAddDropDeadline("");
+                  },
+                },
+              )
+            }
+          >
+            Create term
+          </Button>
+
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="course-section-course">Course</Label>
+              <select
+                id="course-section-course"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={sectionCourseId}
+                onChange={(event) => setSectionCourseId(event.target.value)}
+                data-testid="course-section-course-select"
+              >
+                <option value="">Select course</option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {formatCourseOption(course)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="course-section-term">Term</Label>
+              <select
+                id="course-section-term"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={sectionTermId}
+                onChange={(event) => setSectionTermId(event.target.value)}
+                data-testid="course-section-term-select"
+              >
+                <option value="">Select term</option>
+                {terms.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {formatTermOption(term)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="course-section-code">Section code</Label>
+              <Input
+                id="course-section-code"
+                placeholder="CS101-A"
+                value={sectionCode}
+                onChange={(event) => setSectionCode(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="course-section-capacity">Capacity</Label>
+              <Input
+                id="course-section-capacity"
+                inputMode="numeric"
+                value={sectionMaxCapacity}
+                onChange={(event) => setSectionMaxCapacity(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="course-section-instructor">Instructor</Label>
+              <Input
+                id="course-section-instructor"
+                placeholder="optional"
+                value={sectionInstructorId}
+                onChange={(event) => setSectionInstructorId(event.target.value)}
+              />
+            </div>
+          </div>
+          <Button
+            disabled={!canCreateSection || createSection.isPending}
+            onClick={() =>
+              createSection.mutate(
+                {
+                  course_id: parsedSectionCourseId,
+                  term_id: parsedSectionTermId,
+                  section_code: sectionCode.trim(),
+                  instructor_id: sectionInstructorId.trim() || null,
+                  max_capacity: parsedSectionMaxCapacity,
+                },
+                {
+                  ...getHandlers({ successTitle: "Course section created" }),
+                  onSuccess: () => {
+                    setSectionCode("");
+                    setSectionInstructorId("");
+                    setSectionMaxCapacity("30");
+                  },
+                },
+              )
+            }
+          >
+            Create section
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -310,31 +553,120 @@ export default function SchedulingPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="section-instance-id">Section ID</Label>
-            <div className="flex gap-2">
-              <Input
+            <Label htmlFor="section-instance-id">Section</Label>
+            {sectionRows.length > 0 ? (
+              <select
                 id="section-instance-id"
-                placeholder="Section ID"
-                value={sectionInput}
-                onChange={(event) => setSectionInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    setActiveSectionId(sectionInput.trim());
-                  }
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={activeSectionId}
+                onChange={(event) => {
+                  setActiveSectionId(event.target.value);
+                  setSectionInput(event.target.value);
+                  setActiveLessonId("");
+                  setStudentInput("");
                 }}
-              />
-              <Button onClick={() => setActiveSectionId(sectionInput.trim())}>Load lessons</Button>
-            </div>
+                data-testid="lesson-section-select"
+              >
+                <option value="">Select section</option>
+                {sectionRows.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.section_code ?? section.code ?? `Section #${section.id}`} / Course #{section.course_id ?? "-"} / Term #{section.term_id ?? "-"}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  id="section-instance-id"
+                  placeholder="Section ID"
+                  value={sectionInput}
+                  onChange={(event) => setSectionInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      setActiveSectionId(sectionInput.trim());
+                      setActiveLessonId("");
+                      setStudentInput("");
+                    }
+                  }}
+                />
+                <Button
+                  onClick={() => {
+                    setActiveSectionId(sectionInput.trim());
+                    setActiveLessonId("");
+                    setStudentInput("");
+                  }}
+                >
+                  Load lessons
+                </Button>
+              </div>
+            )}
           </div>
 
           {activeSectionId ? (
             lessonsError ? (
               <ErrorState title="Failed to load section lessons" onRetry={refetchLessons} />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="text-sm text-muted-foreground">
                   Section #{activeSectionId} · {lessonsLoading ? "loading..." : `lessons: ${lessons?.total ?? 0}`}
                 </div>
+                {canWriteAttendance ? (
+                  <div className="grid gap-3 md:grid-cols-[180px_1fr_1fr_auto]">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lesson-scheduled-date">Lesson date</Label>
+                      <Input
+                        id="lesson-scheduled-date"
+                        type="date"
+                        value={lessonDate}
+                        onChange={(event) => setLessonDate(event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lesson-topic-title">Topic</Label>
+                      <Input
+                        id="lesson-topic-title"
+                        placeholder="Lecture topic"
+                        value={lessonTopic}
+                        onChange={(event) => setLessonTopic(event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lesson-notes">Notes</Label>
+                      <Input
+                        id="lesson-notes"
+                        placeholder="optional"
+                        value={lessonNotes}
+                        onChange={(event) => setLessonNotes(event.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        disabled={!canCreateLesson || createLesson.isPending}
+                        onClick={() =>
+                          createLesson.mutate(
+                            {
+                              scheduled_date: lessonDate,
+                              topic_title: lessonTopic.trim(),
+                              notes: lessonNotes.trim() || null,
+                              metadata_json: { source: "admin_scheduling_page" },
+                            },
+                            {
+                              ...getHandlers({ successTitle: "Lesson created" }),
+                              onSuccess: (lesson) => {
+                                setLessonDate("");
+                                setLessonTopic("");
+                                setLessonNotes("");
+                                setActiveLessonId(String(lesson.id));
+                              },
+                            },
+                          )
+                        }
+                      >
+                        Create lesson
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="overflow-x-auto rounded-md border">
                   <table className="w-full text-sm">
                     <thead>
@@ -364,7 +696,6 @@ export default function SchedulingPage() {
                                 size="sm"
                                 onClick={() => {
                                   const selectedId = String(lesson.id);
-                                  setLessonInput(selectedId);
                                   setActiveLessonId(selectedId);
                                 }}
                               >
@@ -380,25 +711,26 @@ export default function SchedulingPage() {
               </div>
             )
           ) : (
-            <p className="text-sm text-muted-foreground">Enter a section ID to load lesson instances.</p>
+            <p className="text-sm text-muted-foreground">Select a section to load lesson instances.</p>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="lesson-instance-id">Lesson instance ID</Label>
-          <div className="flex gap-2">
-            <Input
+            <Label htmlFor="lesson-instance-id">Lesson</Label>
+            <select
               id="lesson-instance-id"
-              placeholder="Lesson instance ID"
-              value={lessonInput}
-              onChange={(event) => setLessonInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  setActiveLessonId(lessonInput.trim());
-                }
-              }}
-            />
-            <Button onClick={() => setActiveLessonId(lessonInput.trim())}>Load attendance</Button>
-          </div>
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={activeLessonId}
+              onChange={(event) => setActiveLessonId(event.target.value)}
+              disabled={!activeSectionId || lessonRows.length === 0}
+              data-testid="attendance-lesson-select"
+            >
+              <option value="">Select lesson</option>
+              {lessonRows.map((lesson) => (
+                <option key={lesson.id} value={lesson.id}>
+                  #{lesson.id} / {lesson.scheduled_date} / {lesson.topic_title}
+                </option>
+              ))}
+            </select>
           </div>
 
           {activeLessonId ? (
@@ -577,12 +909,33 @@ export default function SchedulingPage() {
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div className="space-y-1">
                       <Label htmlFor="attendance-student-id">Student profile ID</Label>
-                      <Input
-                        id="attendance-student-id"
-                        placeholder="e.g. 1001"
-                        value={studentInput}
-                        onChange={(event) => setStudentInput(event.target.value)}
-                      />
+                      {enrolledStudentRows.length > 0 ? (
+                        <select
+                          id="attendance-student-id"
+                          className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                          value={studentInput}
+                          onChange={(event) => setStudentInput(event.target.value)}
+                          data-testid="attendance-student-select"
+                        >
+                          <option value="">Select enrolled student</option>
+                          {enrolledStudentRows.map((enrollment) => (
+                            <option key={enrollment.id} value={enrollment.student_profile_id ?? enrollment.student_id ?? ""}>
+                              {formatStudentOption(
+                                studentById.get(String(enrollment.student_profile_id ?? enrollment.student_id ?? "")),
+                                enrollment.student_profile_id ?? enrollment.student_id,
+                                enrollment.id,
+                              )}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          id="attendance-student-id"
+                          placeholder="e.g. 1001"
+                          value={studentInput}
+                          onChange={(event) => setStudentInput(event.target.value)}
+                        />
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="attendance-status">Attendance status</Label>

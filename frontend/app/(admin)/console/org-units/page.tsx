@@ -13,11 +13,12 @@ import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import {
   useOrgUnits,
+  useOrgUnitsTree,
   useCreateOrgUnit,
   useUpdateOrgUnit,
   useDeactivateOrgUnit,
 } from "@/modules/org-units/hooks";
-import { OrgUnit, OrgUnitType } from "@/modules/org-units/types";
+import { OrgUnit, OrgUnitTreeNode, OrgUnitType } from "@/modules/org-units/types";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { Building2 } from "lucide-react";
@@ -35,6 +36,44 @@ const ORG_UNIT_TYPES: OrgUnitType[] = [
   "academic_commission",
 ];
 
+function OrgUnitTree({ nodes }: { nodes: OrgUnitTreeNode[] }) {
+  if (nodes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2" data-testid="org-units-tree">
+      {nodes.map((node) => (
+        <div key={node.id} className="space-y-2">
+          <div className="flex min-h-10 items-center justify-between gap-3 rounded border bg-background px-3 py-2">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">{node.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {node.unit_type.replace(/_/g, " ")} / {node.code} / #{node.id}
+              </div>
+            </div>
+            <span className={node.active ? "text-xs text-green-700" : "text-xs text-muted-foreground"}>
+              {node.active ? "Active" : "Inactive"}
+            </span>
+          </div>
+          {node.children.length > 0 ? (
+            <div className="ml-4 border-l pl-3">
+              <OrgUnitTree nodes={node.children} />
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function suggestChildType(parent: OrgUnit | undefined): OrgUnitType {
+  if (!parent) return "faculty";
+  if (parent.unit_type === "university" || parent.unit_type === "school") return "faculty";
+  if (parent.unit_type === "faculty") return "department";
+  return "department";
+}
+
 export default function OrgUnitsPage() {
   const { t } = useLanguage();
   const tAny = (key: string) => t(key as never);
@@ -44,7 +83,7 @@ export default function OrgUnitsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
-  const [newType, setNewType] = useState<OrgUnitType>("department");
+  const [newType, setNewType] = useState<OrgUnitType>("faculty");
   const [newParentId, setNewParentId] = useState("");
 
   const [editName, setEditName] = useState("");
@@ -53,12 +92,15 @@ export default function OrgUnitsPage() {
   const [editParentId, setEditParentId] = useState("");
 
   const { data, isLoading, error, refetch } = useOrgUnits({ active_only: false });
+  const treeQuery = useOrgUnitsTree();
   const createUnit = useCreateOrgUnit();
   const deactivateUnit = useDeactivateOrgUnit();
 
   const selectedUnit =
     data?.find((u) => u.id === Number(detail.selectedId)) ?? null;
   const updateUnit = useUpdateOrgUnit(selectedUnit?.id ?? 0);
+  const parentOptions = (data ?? []).filter((unit) => unit.active);
+  const editParentOptions = parentOptions.filter((unit) => unit.id !== selectedUnit?.id);
 
   useEffect(() => {
     if (selectedUnit) {
@@ -141,6 +183,16 @@ export default function OrgUnitsPage() {
         }
       />
 
+      {treeQuery.data && treeQuery.data.length > 0 ? (
+        <section className="space-y-3 rounded border bg-muted/20 p-3" data-testid="org-units-tree-section">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold">Structure Tree</h2>
+            <span className="text-xs text-muted-foreground">{treeQuery.data.length} root</span>
+          </div>
+          <OrgUnitTree nodes={treeQuery.data} />
+        </section>
+      ) : null}
+
       <DataTable
         columns={columns}
         data={data ?? []}
@@ -192,12 +244,19 @@ export default function OrgUnitsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-parent">{tAny("orgUnitParent")}</Label>
-              <Input
+              <select
                 id="edit-parent"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={editParentId}
                 onChange={(e) => setEditParentId(e.target.value)}
-                placeholder="Leave blank for root"
-              />
+              >
+                <option value="">No parent (root)</option>
+                {editParentOptions.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name} ({unit.unit_type.replace(/_/g, " ")}, #{unit.id})
+                  </option>
+                ))}
+              </select>
             </div>
             <PermissionGate permission={PERMISSIONS.ORG_UNITS_WRITE}>
               <div className="flex gap-2">
@@ -263,7 +322,7 @@ export default function OrgUnitsPage() {
           setCreateOpen(false);
           setNewName("");
           setNewCode("");
-          setNewType("department");
+          setNewType("faculty");
           setNewParentId("");
         }}
         title={tAny("addOrgUnit")}
@@ -305,12 +364,24 @@ export default function OrgUnitsPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="new-parent">{tAny("orgUnitParent")}</Label>
-            <Input
+            <select
               id="new-parent"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={newParentId}
-              onChange={(e) => setNewParentId(e.target.value)}
-              placeholder="Leave blank for root"
-            />
+              onChange={(e) => {
+                const nextParentId = e.target.value;
+                setNewParentId(nextParentId);
+                const parent = data?.find((unit) => unit.id === Number(nextParentId));
+                setNewType(suggestChildType(parent));
+              }}
+            >
+              <option value="">No parent (root)</option>
+              {parentOptions.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name} ({unit.unit_type.replace(/_/g, " ")}, #{unit.id})
+                </option>
+              ))}
+            </select>
           </div>
           <PermissionGate permission={PERMISSIONS.ORG_UNITS_WRITE}>
             <Button
@@ -332,7 +403,7 @@ export default function OrgUnitsPage() {
                       setCreateOpen(false);
                       setNewName("");
                       setNewCode("");
-                      setNewType("department");
+                      setNewType("faculty");
                       setNewParentId("");
                     },
                   },

@@ -15,8 +15,8 @@ export interface DegreeProgress {
   requirement_name: string;
   credits_earned: number;
   minimum_credits: number;
-  gpa: number | null;
-  minimum_gpa: number;
+  gpa: number | string | null;
+  minimum_gpa: number | string;
   completed_requirements: RequirementStatus[];
   remaining_requirements: RequirementStatus[];
   graduation_eligible: boolean;
@@ -27,8 +27,8 @@ export interface GraduationEligibility {
   eligible: boolean;
   credits_earned: number;
   minimum_credits: number;
-  gpa: number | null;
-  minimum_gpa: number;
+  gpa: number | string | null;
+  minimum_gpa: number | string;
   remaining_required_items: number;
 }
 
@@ -46,4 +46,44 @@ export interface DegreeProgressConsistencyReport {
   requirement_item_count: number;
   issue_count: number;
   issues: DegreeProgressConsistencyIssue[];
+}
+
+export interface ProgramRequirementItem {
+  id: number;
+  tenant_id: number;
+  requirement_id: number;
+  course_id: number;
+  required: boolean;
+  credits: number;
+}
+
+export interface ProgramRequirement {
+  id: number;
+  tenant_id: number;
+  program_id: number;
+  name: string;
+  minimum_credits: number;
+  minimum_gpa: number | string;
+  is_active: boolean;
+  items: ProgramRequirementItem[];
+}
+
+export interface ProgramRequirementListResponse {
+  total: number;
+  items: ProgramRequirement[];
+}
+
+export interface CreateProgramRequirementItemPayload {
+  course_id: number;
+  credits: number;
+  required?: boolean;
+}
+
+export interface CreateProgramRequirementPayload {
+  program_id: number;
+  name: string;
+  minimum_credits: number;
+  minimum_gpa?: number;
+  is_active?: boolean;
+  items: CreateProgramRequirementItemPayload[];
 }

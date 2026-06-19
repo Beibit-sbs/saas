@@ -24,6 +24,17 @@ interface TenantRecord {
   plan_id: number;
 }
 
+interface TenantOnboardingResponse {
+  tenant?: {
+    id?: number;
+    name?: string;
+  };
+  admin_user?: {
+    login?: string;
+  };
+  billing_state?: string;
+}
+
 interface PlanRecord {
   id: number;
   code: string;
@@ -155,6 +166,14 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const [newWebhookTargetUrl, setNewWebhookTargetUrl] = useState("");
   const [newWebhookSigningSecret, setNewWebhookSigningSecret] = useState("");
   const [webhookFormError, setWebhookFormError] = useState<string | null>(null);
+  const [newTenantName, setNewTenantName] = useState("");
+  const [newTenantAdminEmail, setNewTenantAdminEmail] = useState("");
+  const [newTenantAdminLogin, setNewTenantAdminLogin] = useState("");
+  const [newTenantAdminPassword, setNewTenantAdminPassword] = useState("");
+  const [newTenantAdminDisplayName, setNewTenantAdminDisplayName] = useState("Tenant Administrator");
+  const [newTenantPlanCode, setNewTenantPlanCode] = useState("free");
+  const [tenantOnboardingError, setTenantOnboardingError] = useState<string | null>(null);
+  const [tenantOnboardingResult, setTenantOnboardingResult] = useState<string | null>(null);
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -282,6 +301,38 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["platform-console", "tenants"] });
       void qc.invalidateQueries({ queryKey: ["platform-console", "billing-state", selectedTenantId] });
+    },
+  });
+
+  const createTenantOnboarding = useMutation({
+    mutationFn: (payload: {
+      tenant_name: string;
+      admin_email: string;
+      admin_login: string;
+      admin_password: string;
+      admin_display_name: string;
+      plan_code: string;
+    }) => apiPost<TenantOnboardingResponse>("/platform/tenants", payload),
+    onSuccess: (payload) => {
+      void qc.invalidateQueries({ queryKey: ["platform-console", "tenants"] });
+      const tenantId = Number(payload.tenant?.id ?? 0);
+      if (tenantId > 0) {
+        setSelectedTenantId(tenantId);
+      }
+      setNewTenantName("");
+      setNewTenantAdminEmail("");
+      setNewTenantAdminLogin("");
+      setNewTenantAdminPassword("");
+      setNewTenantAdminDisplayName("Tenant Administrator");
+      setNewTenantPlanCode("free");
+      setTenantOnboardingError(null);
+      setTenantOnboardingResult(
+        `Created ${payload.tenant?.name ?? "tenant"}${payload.admin_user?.login ? ` with admin ${payload.admin_user.login}` : ""}`,
+      );
+    },
+    onError: (error: unknown) => {
+      setTenantOnboardingResult(null);
+      setTenantOnboardingError(error instanceof Error ? error.message : "Tenant onboarding failed");
     },
   });
 
@@ -418,48 +469,133 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
 
     if (section === "tenants") {
       return (
-        <Card data-testid="platform-console-tenants">
-          <CardHeader>
-            <CardTitle>Tenant List</CardTitle>
-            <CardDescription>List view, status, plan and key actions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {tenants.map((tenant) => (
-              <div key={tenant.id} className="rounded border p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{tenant.name}</div>
-                    <div className="text-xs text-muted-foreground">{tenant.slug}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={tenant.status} />
-                    <span className="text-xs text-muted-foreground">plan #{tenant.plan_id}</span>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedTenantId(tenant.id)}>Details</Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateTenantStatus.mutate({ tenantId: tenant.id, status: tenant.status === "active" ? "suspended" : "active" })}
-                    >
-                      {tenant.status === "active" ? "Suspend" : "Activate"}
-                    </Button>
-                    {tenant.id !== 1 && tenant.status !== "inactive" ? (
-                      <ConfirmActionDialog
-                        title="Deactivate tenant?"
-                        description={`${tenant.name} will be moved to inactive status.`}
-                        variant="destructive"
-                        loading={deactivateTenant.isPending}
-                        onConfirm={async () => {
-                          await deactivateTenant.mutateAsync(tenant.id);
-                        }}
-                        trigger={<Button size="sm" variant="destructive">Deactivate</Button>}
-                      />
-                    ) : null}
+        <div className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]" data-testid="platform-console-tenants">
+          <Card data-testid="platform-tenant-onboarding">
+            <CardHeader>
+              <CardTitle>Create University Tenant</CardTitle>
+              <CardDescription>Provision tenant defaults and first tenant admin</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <input
+                className="w-full rounded border px-2 py-1 text-sm"
+                placeholder="University name"
+                value={newTenantName}
+                onChange={(event) => setNewTenantName(event.target.value)}
+                data-testid="tenant-onboarding-name"
+              />
+              <input
+                className="w-full rounded border px-2 py-1 text-sm"
+                placeholder="Admin email"
+                value={newTenantAdminEmail}
+                onChange={(event) => setNewTenantAdminEmail(event.target.value)}
+                data-testid="tenant-onboarding-admin-email"
+              />
+              <input
+                className="w-full rounded border px-2 py-1 text-sm"
+                placeholder="Admin login"
+                value={newTenantAdminLogin}
+                onChange={(event) => setNewTenantAdminLogin(event.target.value)}
+                data-testid="tenant-onboarding-admin-login"
+              />
+              <input
+                className="w-full rounded border px-2 py-1 text-sm"
+                placeholder="Admin display name"
+                value={newTenantAdminDisplayName}
+                onChange={(event) => setNewTenantAdminDisplayName(event.target.value)}
+                data-testid="tenant-onboarding-admin-display-name"
+              />
+              <input
+                className="w-full rounded border px-2 py-1 text-sm"
+                type="password"
+                placeholder="Temporary password"
+                value={newTenantAdminPassword}
+                onChange={(event) => setNewTenantAdminPassword(event.target.value)}
+                data-testid="tenant-onboarding-admin-password"
+              />
+              <input
+                className="w-full rounded border px-2 py-1 text-sm"
+                placeholder="Plan code"
+                value={newTenantPlanCode}
+                onChange={(event) => setNewTenantPlanCode(event.target.value)}
+                data-testid="tenant-onboarding-plan-code"
+              />
+              {tenantOnboardingError ? (
+                <div className="text-xs text-red-700" data-testid="tenant-onboarding-error">{tenantOnboardingError}</div>
+              ) : null}
+              {tenantOnboardingResult ? (
+                <div className="text-xs text-green-700" data-testid="tenant-onboarding-result">{tenantOnboardingResult}</div>
+              ) : null}
+              <Button
+                size="sm"
+                disabled={
+                  createTenantOnboarding.isPending ||
+                  newTenantName.trim().length < 2 ||
+                  newTenantAdminEmail.trim().length < 3 ||
+                  newTenantAdminLogin.trim().length < 3 ||
+                  newTenantAdminPassword.trim().length < 6
+                }
+                onClick={() => {
+                  setTenantOnboardingError(null);
+                  setTenantOnboardingResult(null);
+                  createTenantOnboarding.mutate({
+                    tenant_name: newTenantName.trim(),
+                    admin_email: newTenantAdminEmail.trim(),
+                    admin_login: newTenantAdminLogin.trim(),
+                    admin_password: newTenantAdminPassword.trim(),
+                    admin_display_name: newTenantAdminDisplayName.trim() || "Tenant Administrator",
+                    plan_code: newTenantPlanCode.trim() || "free",
+                  });
+                }}
+                data-testid="tenant-onboarding-submit"
+              >
+                {createTenantOnboarding.isPending ? "Creating..." : "Create Tenant"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Tenant List</CardTitle>
+              <CardDescription>List view, status, plan and key actions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {tenants.map((tenant) => (
+                <div key={tenant.id} className="rounded border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-medium">{tenant.name}</div>
+                      <div className="text-xs text-muted-foreground">{tenant.slug}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={tenant.status} />
+                      <span className="text-xs text-muted-foreground">plan #{tenant.plan_id}</span>
+                      <Button size="sm" variant="outline" onClick={() => setSelectedTenantId(tenant.id)}>Details</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateTenantStatus.mutate({ tenantId: tenant.id, status: tenant.status === "active" ? "suspended" : "active" })}
+                      >
+                        {tenant.status === "active" ? "Suspend" : "Activate"}
+                      </Button>
+                      {tenant.id !== 1 && tenant.status !== "inactive" ? (
+                        <ConfirmActionDialog
+                          title="Deactivate tenant?"
+                          description={`${tenant.name} will be moved to inactive status.`}
+                          variant="destructive"
+                          loading={deactivateTenant.isPending}
+                          onConfirm={async () => {
+                            await deactivateTenant.mutateAsync(tenant.id);
+                          }}
+                          trigger={<Button size="sm" variant="destructive">Deactivate</Button>}
+                        />
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       );
     }
 

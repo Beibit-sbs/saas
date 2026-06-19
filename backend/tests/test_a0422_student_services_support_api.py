@@ -11,7 +11,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 MIGRATION_FILE = BACKEND_DIR / "alembic" / "versions" / "sss0422rt01_a0422_student_services_support_tables.py"
 
 
-def test_route_inventory_exact_15() -> None:
+def test_route_inventory_exact_21() -> None:
     routes = [route for route in app.routes if getattr(route, "path", "").startswith(BASE)]
     target = {
         "/api/admin/student-services/requests",
@@ -23,13 +23,19 @@ def test_route_inventory_exact_15() -> None:
         "/api/admin/student-services/cases/{case_id}/notes",
         "/api/admin/student-services/cases/{case_id}/evidence",
         "/api/admin/student-services/hardship",
+        "/api/admin/student-services/hardship/from-finance-handoff",
+        "/api/admin/student-services/hardship/from-finance-handoff/reviewer-queue",
+        "/api/admin/student-services/hardship/from-finance-handoff/finance-office-referral-queue",
+        "/api/admin/student-services/hardship/from-finance-handoff/{hardship_id}/evidence-gap",
+        "/api/admin/student-services/hardship/from-finance-handoff/{hardship_id}/human-review-outcome-note",
+        "/api/admin/student-services/hardship/from-finance-handoff/{hardship_id}/finance-office-referral",
         "/api/admin/student-services/accommodations",
         "/api/admin/student-services/complaints",
         "/api/admin/student-services/escalations",
         "/api/admin/student-services/dashboard/summary",
     }
     matched = [route for route in routes if route.path in target]
-    assert len(matched) == 15
+    assert len(matched) == 21
 
 
 def test_all_target_routes_are_guarded() -> None:
@@ -44,6 +50,12 @@ def test_all_target_routes_are_guarded() -> None:
         "/api/admin/student-services/cases/{case_id}/notes",
         "/api/admin/student-services/cases/{case_id}/evidence",
         "/api/admin/student-services/hardship",
+        "/api/admin/student-services/hardship/from-finance-handoff",
+        "/api/admin/student-services/hardship/from-finance-handoff/reviewer-queue",
+        "/api/admin/student-services/hardship/from-finance-handoff/finance-office-referral-queue",
+        "/api/admin/student-services/hardship/from-finance-handoff/{hardship_id}/evidence-gap",
+        "/api/admin/student-services/hardship/from-finance-handoff/{hardship_id}/human-review-outcome-note",
+        "/api/admin/student-services/hardship/from-finance-handoff/{hardship_id}/finance-office-referral",
         "/api/admin/student-services/accommodations",
         "/api/admin/student-services/complaints",
         "/api/admin/student-services/escalations",

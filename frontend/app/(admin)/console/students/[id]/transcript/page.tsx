@@ -11,15 +11,23 @@ import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { AccessDenied, PermissionGate } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { usePermissions } from "@/shared/hooks/use-permissions";
+import { useStudent } from "@/modules/students/hooks";
 import { useCreateTranscriptSnapshot, useTranscript } from "@/modules/transcripts/hooks";
 import type { TranscriptSnapshot } from "@/modules/transcripts/types";
 import { formatDate } from "@/shared/utils/format";
 import { FileText, ChevronLeft } from "lucide-react";
 
+function formatNumber(value: number | string | null | undefined, decimals = 2): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(decimals) : "—";
+}
+
 export default function TranscriptPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { hasPermission } = usePermissions();
   const { data: transcript, isLoading, error, refetch } = useTranscript(id);
+  const { data: student } = useStudent(id);
   const [lastSnapshot, setLastSnapshot] = useState<TranscriptSnapshot | null>(null);
   const { getHandlers } = useMutationFeedback();
   const createSnapshot = useCreateTranscriptSnapshot(id);
@@ -46,7 +54,11 @@ export default function TranscriptPage({ params }: { params: { id: string } }) {
         </Link>
         <PageHeader
           title="Transcript"
-          description={`${transcript.student_name} · ${transcript.student_number}`}
+          description={
+            student
+              ? `${student.student_number} / ${student.first_name} ${student.last_name}`
+              : `Student profile #${transcript.student_profile_id}`
+          }
           icon={FileText}
           actions={
             <PermissionGate permission={PERMISSIONS.TRANSCRIPTS_WRITE}>
@@ -101,15 +113,15 @@ export default function TranscriptPage({ params }: { params: { id: string } }) {
       <div className="grid gap-3 sm:grid-cols-3 text-sm">
         <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">GPA</p>
-          <p className="font-semibold text-lg">{transcript.gpa?.toFixed(2) ?? "—"}</p>
+          <p className="font-semibold text-lg">{formatNumber(transcript.gpa)}</p>
         </div>
         <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">Credits</p>
           <p className="font-semibold text-lg">{transcript.total_credits}</p>
         </div>
         <div className="rounded-lg border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Program</p>
-          <p className="font-semibold text-sm">{transcript.program ?? "—"}</p>
+          <p className="text-xs text-muted-foreground">Student profile</p>
+          <p className="font-semibold text-sm">#{transcript.student_profile_id}</p>
         </div>
       </div>
 
@@ -118,29 +130,30 @@ export default function TranscriptPage({ params }: { params: { id: string } }) {
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="px-4 py-2 text-left font-medium">Course</th>
-              <th className="px-4 py-2 text-left font-medium">Section</th>
-              <th className="px-4 py-2 text-left font-medium">Semester</th>
+              <th className="px-4 py-2 text-left font-medium">Term</th>
               <th className="px-4 py-2 text-center font-medium">Credits</th>
               <th className="px-4 py-2 text-center font-medium">Grade</th>
+              <th className="px-4 py-2 text-center font-medium">Points</th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {transcript.entries.map((e, i) => (
-              <tr key={i} className={e.completed ? "" : "text-muted-foreground"}>
-                <td className="px-4 py-2">{e.course_name}</td>
+            {transcript.items.map((item) => (
+              <tr key={item.enrollment_id} className={item.grade_code ? "" : "text-muted-foreground"}>
                 <td className="px-4 py-2">
-                  <code className="text-xs">{e.section_code}</code>
+                  <div className="font-medium">{item.course_title ?? `Course #${item.course_id}`}</div>
+                  <code className="text-xs">{item.course_code ?? `#${item.course_id}`}</code>
                 </td>
-                <td className="px-4 py-2">{e.semester}</td>
-                <td className="px-4 py-2 text-center">{e.credits}</td>
-                <td className="px-4 py-2 text-center font-medium">{e.grade_value ?? "—"}</td>
+                <td className="px-4 py-2">{item.term_name ?? item.term_code ?? `Term #${item.term_id}`}</td>
+                <td className="px-4 py-2 text-center">{item.credits}</td>
+                <td className="px-4 py-2 text-center font-medium">{item.grade_code ?? "—"}</td>
+                <td className="px-4 py-2 text-center">{formatNumber(item.grade_points)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <p className="text-xs text-muted-foreground">Generated {formatDate(transcript.generated_at)}</p>
+      <p className="text-xs text-muted-foreground">Transcript is generated from current enrollments and submitted grades.</p>
     </div>
   );
 }

@@ -7,6 +7,15 @@ import type {
   DashboardSummary,
   EscalationCreatePayload,
   EscalationItemResponse,
+  FinanceHardshipEvidenceGapIntakePayload,
+  FinanceHardshipEvidenceGapIntakeResponse,
+  FinanceHardshipFinanceOfficeReferralPayload,
+  FinanceHardshipFinanceOfficeReferralQueueResponse,
+  FinanceHardshipFinanceOfficeReferralResponse,
+  FinanceHardshipHandoffCreatePayload,
+  FinanceHardshipHumanReviewOutcomeNotePayload,
+  FinanceHardshipHumanReviewOutcomeNoteResponse,
+  FinanceHardshipReviewerQueueResponse,
   HardshipCreatePayload,
   ReadinessItemResponse,
   ServiceRequestAssignPayload,
@@ -46,6 +55,8 @@ export const studentServicesSupportApi = {
 
   createHardshipRequest: (payload: HardshipCreatePayload) =>
     apiPost<ReadinessItemResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.hardship, payload),
+  createHardshipRequestFromFinanceHandoff: (payload: FinanceHardshipHandoffCreatePayload) =>
+    apiPost<ReadinessItemResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.hardshipFromFinanceHandoff, payload),
   createAccommodationRequest: (payload: AccommodationCreatePayload) =>
     apiPost<ReadinessItemResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.accommodations, payload),
   createComplaint: (payload: ComplaintCreatePayload) =>
@@ -54,4 +65,20 @@ export const studentServicesSupportApi = {
     apiPost<EscalationItemResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.escalations, payload),
 
   getDashboardSummary: () => apiGet<DashboardSummary>(STUDENT_SERVICES_SUPPORT_API_PATHS.dashboardSummary),
+  getFinanceHardshipReviewerQueue: () =>
+    apiGet<FinanceHardshipReviewerQueueResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipReviewerQueue),
+  getFinanceHardshipFinanceOfficeReferralQueue: () =>
+    apiGet<FinanceHardshipFinanceOfficeReferralQueueResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipFinanceOfficeReferralQueue),
+  intakeFinanceHardshipEvidenceGap: (hardshipId: number, payload: FinanceHardshipEvidenceGapIntakePayload) =>
+    apiPost<FinanceHardshipEvidenceGapIntakeResponse>(STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipEvidenceGap(hardshipId), payload),
+  recordFinanceHardshipHumanReviewOutcomeNote: (hardshipId: number, payload: FinanceHardshipHumanReviewOutcomeNotePayload) =>
+    apiPost<FinanceHardshipHumanReviewOutcomeNoteResponse>(
+      STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipHumanReviewOutcomeNote(hardshipId),
+      payload,
+    ),
+  createFinanceHardshipFinanceOfficeReferral: (hardshipId: number, payload: FinanceHardshipFinanceOfficeReferralPayload) =>
+    apiPost<FinanceHardshipFinanceOfficeReferralResponse>(
+      STUDENT_SERVICES_SUPPORT_API_PATHS.financeHardshipFinanceOfficeReferral(hardshipId),
+      payload,
+    ),
 };

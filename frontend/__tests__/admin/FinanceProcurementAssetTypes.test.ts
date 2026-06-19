@@ -29,25 +29,26 @@ describe('Finance Procurement Asset types', () => {
   it('exports the expected module constants', () => {
     expect(FINANCE_PROCUREMENT_ASSET_API_BASE).toBe('/api/admin/finance-procurement-asset');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY).toBe('/console/finance-procurement-asset');
-    expect(FINANCE_PROCUREMENT_ASSET_ROUTE_COUNT).toBe(22);
-    expect(FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT).toBe(53);
-    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(48);
+    expect(FINANCE_PROCUREMENT_ASSET_ROUTE_COUNT).toBe(23);
+    expect(FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT).toBe(55);
+    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(50);
     expect(FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE).toBe('METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY');
     expect(FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_BASELINE_COMMIT).toBe('0453fbd');
     expect(FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_RUNTIME_COMMIT).toBe('0394414');
     expect(FINANCE_PROCUREMENT_ASSET_DATA_SOURCE).toBe('computed_from_finance_procurement_asset_metadata');
   });
 
-  it('keeps the full 22-route contract explicit', () => {
-    expect(FINANCE_PROCUREMENT_ASSET_ROUTES).toHaveLength(22);
+  it('keeps the full 23-route contract explicit', () => {
+    expect(FINANCE_PROCUREMENT_ASSET_ROUTES).toHaveLength(23);
     expect(FINANCE_PROCUREMENT_ASSET_ROUTES[0]?.path).toBe('/console/finance-procurement-asset');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTES[1]?.path).toBe('/console/finance-procurement-asset/dashboard');
+    expect(FINANCE_PROCUREMENT_ASSET_ROUTES.map((route) => route.path)).toContain('/console/finance-procurement-asset/student-finance');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTES.at(-1)?.path).toBe('/console/finance-procurement-asset/limitations');
   });
 
   it('defines the expected dashboard widgets and workflows', () => {
     expect(FINANCE_PROCUREMENT_ASSET_DASHBOARD_WIDGETS).toHaveLength(12);
-    expect(FINANCE_PROCUREMENT_ASSET_WORKFLOWS).toHaveLength(11);
+    expect(FINANCE_PROCUREMENT_ASSET_WORKFLOWS).toHaveLength(12);
   });
 
   it('defines the expected deferred provider profiles', () => {
@@ -93,9 +94,9 @@ describe('Finance Procurement Asset types', () => {
       contract_version: 'A-040.3',
       runtime_mode: FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE,
       table_count: 24,
-      route_count: 53,
-      permission_count: 48,
-      planned_route_count: 22,
+      route_count: 55,
+      permission_count: 50,
+      planned_route_count: 23,
       data_source: FINANCE_PROCUREMENT_ASSET_DATA_SOURCE,
       boundary_summary: { fake_metrics: false },
     };
@@ -120,7 +121,7 @@ describe('Finance Procurement Asset types', () => {
       boundary_summary: { fake_metrics: false },
     };
 
-    expect(overview.permission_count).toBe(48);
+    expect(overview.permission_count).toBe(50);
     expect(dashboard.data_source).toBe(FINANCE_PROCUREMENT_ASSET_DATA_SOURCE);
   });
 

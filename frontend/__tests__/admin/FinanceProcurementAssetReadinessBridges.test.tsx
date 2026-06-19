@@ -32,6 +32,18 @@ describe('Finance Procurement Asset readiness and bridges', () => {
     expect(screen.getByTestId('fpa-bridge-hr-payroll-bridge')).toBeInTheDocument();
   });
 
+  it('renders student finance bridge without payment execution controls', () => {
+    render(<FinanceProcurementAssetPage routeKey="student-finance" userPermissions={[FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bridgesStudentFinanceRead]} />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Student Finance Bridge' })).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-student-finance-bridge-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-receivables-intake-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-hardship-handoff-link')).toBeInTheDocument();
+    expect(screen.getByText('tuitionChargeCreation=false')).toBeInTheDocument();
+    expect(screen.getByText('paymentExecutionEnabled=false')).toBeInTheDocument();
+    expect(screen.getByText('POST /api/admin/finance-procurement-asset/receivables/metadata')).toBeInTheDocument();
+  });
+
   it('renders ERP and bank readiness routes with deferred boundaries', () => {
     render(<FinanceProcurementAssetPage routeKey="erp-readiness" userPermissions={[FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.erpReadinessRead]} />);
     render(<FinanceProcurementAssetPage routeKey="bank-readiness" userPermissions={[FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bankReadinessRead]} />);

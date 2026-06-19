@@ -23,6 +23,23 @@ class AcademicTermReadSchema(BaseModel):
     updated_at: datetime
 
 
+class AcademicTermCreateSchema(BaseModel):
+    term_code: str = Field(min_length=1, max_length=64)
+    term_name: str = Field(min_length=1, max_length=255)
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    add_drop_deadline: datetime | None = None
+    status: str = Field(default="active", pattern="^(active|inactive|archived)$")
+    metadata_json: dict = Field(default_factory=dict)
+
+
+class AcademicTermListResponseSchema(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[AcademicTermReadSchema]
+
+
 class EnrollmentCreateSchema(BaseModel):
     student_profile_id: int = Field(gt=0)
     course_id: int = Field(gt=0)

@@ -4,6 +4,9 @@ import type {
   AccommodationCreatePayload,
   ComplaintCreatePayload,
   EscalationCreatePayload,
+  FinanceHardshipEvidenceGapIntakePayload,
+  FinanceHardshipFinanceOfficeReferralPayload,
+  FinanceHardshipHumanReviewOutcomeNotePayload,
   HardshipCreatePayload,
   ServiceRequestAssignPayload,
   ServiceRequestCreatePayload,
@@ -19,6 +22,8 @@ const CACHE_KEYS = {
   cases: ['student-services-support', 'cases'] as const,
   caseDetail: (caseId: number | null) => ['student-services-support', 'case', caseId] as const,
   dashboard: ['student-services-support', 'dashboard'] as const,
+  financeHardshipReviewerQueue: ['student-services-support', 'finance-hardship-reviewer-queue'] as const,
+  financeHardshipFinanceOfficeReferralQueue: ['student-services-support', 'finance-hardship-finance-office-referral-queue'] as const,
 };
 
 export function useServiceRequests() {
@@ -142,5 +147,58 @@ export function useStudentSupportDashboardSummary() {
     queryKey: CACHE_KEYS.dashboard,
     queryFn: studentServicesSupportApi.getDashboardSummary,
     staleTime: 30000,
+  });
+}
+
+export function useFinanceHardshipReviewerQueue() {
+  return useQuery({
+    queryKey: CACHE_KEYS.financeHardshipReviewerQueue,
+    queryFn: studentServicesSupportApi.getFinanceHardshipReviewerQueue,
+    staleTime: 30000,
+  });
+}
+
+export function useFinanceHardshipFinanceOfficeReferralQueue() {
+  return useQuery({
+    queryKey: CACHE_KEYS.financeHardshipFinanceOfficeReferralQueue,
+    queryFn: studentServicesSupportApi.getFinanceHardshipFinanceOfficeReferralQueue,
+    staleTime: 30000,
+  });
+}
+
+export function useFinanceHardshipEvidenceGapIntake() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ hardshipId, payload }: { hardshipId: number; payload: FinanceHardshipEvidenceGapIntakePayload }) =>
+      studentServicesSupportApi.intakeFinanceHardshipEvidenceGap(hardshipId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.dashboard });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.financeHardshipReviewerQueue });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.financeHardshipFinanceOfficeReferralQueue });
+    },
+  });
+}
+
+export function useFinanceHardshipHumanReviewOutcomeNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ hardshipId, payload }: { hardshipId: number; payload: FinanceHardshipHumanReviewOutcomeNotePayload }) =>
+      studentServicesSupportApi.recordFinanceHardshipHumanReviewOutcomeNote(hardshipId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.dashboard });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.financeHardshipReviewerQueue });
+    },
+  });
+}
+
+export function useFinanceHardshipFinanceOfficeReferral() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ hardshipId, payload }: { hardshipId: number; payload: FinanceHardshipFinanceOfficeReferralPayload }) =>
+      studentServicesSupportApi.createFinanceHardshipFinanceOfficeReferral(hardshipId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.dashboard });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.financeHardshipReviewerQueue });
+    },
   });
 }

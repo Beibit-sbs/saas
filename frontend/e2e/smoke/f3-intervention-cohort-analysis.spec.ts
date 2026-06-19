@@ -56,40 +56,89 @@ function makeSignedAccessToken(): string {
 
 async function stubAuthSession(page: Page): Promise<void> {
   const baseUrl = process.env.E2E_BASE_URL ?? "https://nginx";
-  const secure = new URL(baseUrl).protocol === "https:";
-
-  await page.context().addCookies([
-    {
-      name: "e2e_bypass_session",
-      value: "1",
-      url: baseUrl,
-      httpOnly: true,
-      secure,
-      sameSite: "Lax",
-    },
-    {
-      name: "app_access_token",
-      value: makeSignedAccessToken(),
-      url: baseUrl,
-      httpOnly: true,
-      secure,
-      sameSite: "Lax",
-    },
+  const parsedUrl = new URL(baseUrl);
+  const cookieOrigins = new Set<string>([
+    `${parsedUrl.protocol}//${parsedUrl.host}`,
+    `http://${parsedUrl.host}`,
+    `https://${parsedUrl.host}`,
   ]);
+
+  const token = makeSignedAccessToken();
+  await page.context().addCookies(
+    Array.from(cookieOrigins).flatMap((origin) => {
+      const secure = new URL(origin).protocol === "https:";
+      return [
+        {
+          name: "e2e_bypass_session",
+          value: "1",
+          url: origin,
+          httpOnly: true,
+          secure,
+          sameSite: "Lax",
+        },
+        {
+          name: "admin_token",
+          value: token,
+          url: origin,
+          httpOnly: true,
+          secure,
+          sameSite: "Lax",
+        },
+        {
+          name: "app_access_token",
+          value: token,
+          url: origin,
+          httpOnly: true,
+          secure,
+          sameSite: "Lax",
+        },
+      ];
+    }),
+  );
+
+  await page.route("**/api/auth/csrf*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ csrf_token: "f3-csrf-token" }),
+    });
+  });
+
+  await page.route("**/api/auth/me/preferences", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ language: "en" }),
+    });
+  });
+
+  await page.route("**/api/auth/me/preferences/language*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, language: "en" }),
+    });
+  });
 
   await page.route("**/api/auth/me", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        user_id: "program_manager@example.com",
-        email: "program_manager@example.com",
-        roles: ["admin"],
-        tenant_id: 1,
-        permissions: [
-          "interventions:view",
-          "interventions:execute_playbook",
-        ],
+        authenticated: true,
+        user: {
+          sub: "program_manager@example.com",
+          email: "program_manager@example.com",
+          displayName: "Program Manager",
+          roles: ["admin"],
+          tenantId: 1,
+          permissions: [
+            "interventions.read",
+            "interventions.write",
+            "effectiveness.read",
+            "effectiveness.write",
+          ],
+        },
       }),
     })
   );

@@ -20,6 +20,8 @@ import {
   useDeleteProgram,
 } from "@/modules/programs/hooks";
 import type { Program } from "@/modules/programs/types";
+import { useOrgUnits } from "@/modules/org-units/hooks";
+import type { OrgUnit } from "@/modules/org-units/types";
 
 interface ProgramFormState {
   program_code: string;
@@ -37,6 +39,11 @@ const EMPTY_FORM: ProgramFormState = {
   status: "active",
 };
 
+function orgUnitProgramLabel(unit: OrgUnit): string {
+  const label = `${unit.code} - ${unit.name}`.trim();
+  return label.length > 128 ? label.slice(0, 128) : label;
+}
+
 export default function ProgramsPage() {
   const { t } = useLanguage();
   const tAny = (key: string) => t(key as never);
@@ -47,12 +54,17 @@ export default function ProgramsPage() {
   const [form, setForm] = useState<ProgramFormState>(EMPTY_FORM);
 
   const { data, isLoading, error, refetch } = usePrograms();
+  const orgUnitsQuery = useOrgUnits({ active_only: true });
   const createProgram = useCreateProgram();
   const updateProgram = useUpdateProgram(editProgram?.id ?? null);
   const deleteProgram = useDeleteProgram();
 
   const isSubmitting =
     createProgram.isPending || updateProgram.isPending || deleteProgram.isPending;
+  const academicOrgUnits = useMemo(
+    () => (orgUnitsQuery.data ?? []).filter((unit) => unit.unit_type === "faculty" || unit.unit_type === "department"),
+    [orgUnitsQuery.data],
+  );
 
   const isFormValid = useMemo(
     () =>
@@ -193,6 +205,7 @@ export default function ProgramsPage() {
         <ProgramForm
           form={form}
           setForm={setForm}
+          orgUnits={academicOrgUnits}
           disabled={isSubmitting}
           onSave={() => {
             createProgram.mutate(form, {
@@ -218,6 +231,7 @@ export default function ProgramsPage() {
         <ProgramForm
           form={form}
           setForm={setForm}
+          orgUnits={academicOrgUnits}
           disabled={isSubmitting}
           onSave={() => {
             updateProgram.mutate(form, {
@@ -244,6 +258,7 @@ function ProgramForm({
   canSave,
   disabled,
   saveLabel,
+  orgUnits,
 }: {
   form: ProgramFormState;
   setForm: (value: ProgramFormState) => void;
@@ -251,6 +266,7 @@ function ProgramForm({
   canSave: boolean;
   disabled: boolean;
   saveLabel: string;
+  orgUnits: OrgUnit[];
 }) {
   const { t } = useLanguage();
   const tAny = (key: string) => t(key as never);
@@ -286,12 +302,32 @@ function ProgramForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="program-faculty">{tAny("programFaculty")}</Label>
-        <Input
-          id="program-faculty"
-          value={form.faculty}
-          onChange={(e) => setForm({ ...form, faculty: e.target.value })}
-          placeholder="Engineering"
-        />
+        {orgUnits.length > 0 ? (
+          <select
+            id="program-faculty"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={form.faculty}
+            onChange={(e) => setForm({ ...form, faculty: e.target.value })}
+            data-testid="program-org-unit-select"
+          >
+            <option value="">Select faculty or department</option>
+            {orgUnits.map((unit) => {
+              const label = orgUnitProgramLabel(unit);
+              return (
+                <option key={unit.id} value={label}>
+                  {label} ({unit.unit_type.replace(/_/g, " ")}, #{unit.id})
+                </option>
+              );
+            })}
+          </select>
+        ) : (
+          <Input
+            id="program-faculty"
+            value={form.faculty}
+            onChange={(e) => setForm({ ...form, faculty: e.target.value })}
+            placeholder="Engineering"
+          />
+        )}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="program-status">{tAny("programStatus")}</Label>

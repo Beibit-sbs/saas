@@ -606,7 +606,9 @@ async function expectForbiddenDomAbsent(page: Page) {
 async function expectRouteShell(page: Page, route: CampusRouteSpec) {
   await expect(page.getByTestId('campus-facilities-page-shell')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('campus-facilities-route-header')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole('heading', { level: 1, name: route.title })).toBeVisible({ timeout: 15_000 });
+  await expect(
+    page.getByTestId('campus-facilities-route-header').getByRole('heading', { level: 1, name: route.title }),
+  ).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('nav[aria-label="Campus facilities navigation"] a')).toHaveCount(24, { timeout: 15_000 });
   await expect(page.getByTestId(`campus-facilities-page-${route.routeKey}`)).toBeVisible({ timeout: 15_000 });
 }

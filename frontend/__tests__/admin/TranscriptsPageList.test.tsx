@@ -15,6 +15,15 @@ vi.mock("../../shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
 
+vi.mock("../../modules/students/hooks", () => ({
+  useStudents: () => ({
+    data: { items: [], total: 0 },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock("../../app/components/LanguageProvider", () => ({
   useLanguage: () => ({
     t: (key: string) => key,

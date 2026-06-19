@@ -17,6 +17,24 @@ vi.mock("../../modules/transcripts/hooks", () => ({
   useCreateTranscriptSnapshot: (...args: unknown[]) => useCreateTranscriptSnapshotMock(...args),
 }));
 
+vi.mock("../../modules/students/hooks", () => ({
+  useStudent: () => ({
+    data: {
+      id: "1001",
+      student_number: "STU-001",
+      first_name: "Jane",
+      last_name: "Doe",
+      email: "jane@example.com",
+      status: "active",
+      tenant_id: "1",
+      program: "CS",
+      enrollment_year: 2026,
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+    },
+  }),
+}));
+
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
@@ -40,22 +58,21 @@ vi.mock("../../shared/hooks/use-mutation-feedback", () => ({
 }));
 
 const TRANSCRIPT = {
-  student_id: "s1",
-  student_name: "Jane Doe",
-  student_number: "STU-001",
-  program: "CS",
+  student_profile_id: 1001,
   gpa: 3.9,
   total_credits: 30,
-  generated_at: "2026-04-03T00:00:00Z",
-  entries: [
+  items: [
     {
-      course_name: "Intro to CS",
-      section_code: "CS101-01",
+      enrollment_id: 4001,
+      term_id: 1,
+      term_code: "2026-SP",
+      term_name: "2026 Spring",
+      course_id: 701,
+      course_code: "CS101",
+      course_title: "Intro to CS",
       credits: 3,
-      grade_value: "A",
-      numeric_value: 4.0,
-      semester: "2026 Spring",
-      completed: true,
+      grade_code: "A",
+      grade_points: 4.0,
     },
   ],
 };
@@ -79,7 +96,7 @@ describe("TranscriptPage", () => {
   it("renders transcript summary and entries", () => {
     render(<TranscriptPage params={{ id: "s1" }} />);
 
-    expect(screen.getByText("Jane Doe · STU-001")).toBeInTheDocument();
+    expect(screen.getByText("STU-001 / Jane Doe")).toBeInTheDocument();
     expect(screen.getByText("Intro to CS")).toBeInTheDocument();
     expect(screen.getByText("Create snapshot")).toBeInTheDocument();
   });

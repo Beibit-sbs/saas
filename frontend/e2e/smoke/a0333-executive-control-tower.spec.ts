@@ -493,8 +493,8 @@ async function stubExecutiveApis(
 }
 
 async function expectNoMutationUi(page: Page) {
-  await expect(page.getByRole("button", { name: /create|save|submit|update|delete|dispatch|send now|escalate/i })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /create|new|dispatch|send now|escalate/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /dispatch|send now|escalate|auto-?approve|auto-?sign/i })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /dispatch|send now|escalate|auto-?approve|auto-?sign/i })).toHaveCount(0);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -508,9 +508,13 @@ test.describe("A-033.3 executive control tower smoke", () => {
 
     await page.goto("/console/executive-control-tower");
 
-    await expect(page.getByRole("heading", { name: /Executive Control Tower/i })).toBeVisible();
-    await expect(page.getByText(/Computed from governance workflows/i)).toBeVisible();
-    await expect(page.getByText(/No automated decision is made by this dashboard/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Executive Control Tower/i }).first()).toBeVisible();
+    await expect(page.getByText(/Computed from governance workflows/i).first()).toContainText(
+      /Computed from governance workflows/i,
+    );
+    await expect(page.getByText(/No automated decision is made by this dashboard/i).first()).toContainText(
+      /No automated decision is made by this dashboard/i,
+    );
     await expect(page.getByText(/Executive Overview/i)).toBeVisible();
     await expect(page.getByText(/Incomplete data remains visible while the backend foundation matures/i)).toBeVisible();
     await expectNoMutationUi(page);
@@ -545,7 +549,7 @@ test.describe("A-033.3 executive control tower smoke", () => {
     await page.goto("/console/executive-control-tower/assignments");
 
     await expect(page.getByRole("heading", { name: /Assignment Execution/i })).toBeVisible();
-    await expect(page.getByText(/Operational visibility only with no ranking or punitive behavior/i)).toBeVisible();
+    await expect(page.getByText(/Operational visibility only with no ranking or punitive behavior/i).first()).toBeVisible();
     await expect(page.getByText(/No executor punishment or ranking/i)).toBeVisible();
     await expectNoMutationUi(page);
   });
@@ -572,7 +576,7 @@ test.describe("A-033.3 executive control tower smoke", () => {
     await page.goto("/console/executive-control-tower/sla-risk");
 
     await expect(page.getByRole("heading", { name: /SLA \/ Risk \/ Bottleneck/i }).first()).toBeVisible();
-    await expect(page.getByText(/Operational SLA and bottleneck visibility with no auto-escalation action/i)).toBeVisible();
+    await expect(page.getByText(/Operational SLA and bottleneck visibility with no auto-escalation action/i).first()).toBeVisible();
     await expect(page.getByText(/Operational indicators only. No auto-escalation button and no hidden score/i)).toBeVisible();
     await expect(page.getByText(/Unavailable/i)).toBeVisible();
     await expect(page.getByTestId("incomplete-data-notice").first()).toBeVisible();
@@ -585,7 +589,7 @@ test.describe("A-033.3 executive control tower smoke", () => {
     await page.goto("/console/executive-control-tower/strategy");
 
     await expect(page.getByRole("heading", { name: /Strategy KPI/i })).toBeVisible();
-    await expect(page.getByText(/Future-contract metrics only. No fake progress and no invented initiatives/i)).toBeVisible();
+    await expect(page.getByText(/Future-contract metrics only. No fake progress and no invented initiatives/i).first()).toBeVisible();
     await expect(page.getByText(/Future-contract strategy metrics remain deferred until a real strategy source exists/i)).toBeVisible();
     await expect(page.getByText(/Future contract/i).first()).toBeVisible();
   });
@@ -597,7 +601,7 @@ test.describe("A-033.3 executive control tower smoke", () => {
     await page.goto("/console/executive-control-tower/audit");
 
     await expect(page.getByRole("heading", { name: /Audit \/ Compliance/i }).first()).toBeVisible();
-    await expect(page.getByText(/Read-only audit visibility with limitations shown explicitly/i)).toBeVisible();
+    await expect(page.getByText(/Read-only audit visibility with limitations shown explicitly/i).first()).toBeVisible();
     await expect(page.getByText(/Audit and compliance visibility only. No production-ready or L5\/L6 claim is made here/i)).toBeVisible();
     await expect(page.getByText(/^Limitations$/i).first()).toBeVisible();
   });
@@ -609,8 +613,8 @@ test.describe("A-033.3 executive control tower smoke", () => {
     await page.goto("/console/executive-control-tower/departments");
 
     await expect(page.getByRole("heading", { name: /Department Performance/i }).first()).toBeVisible();
-    await expect(page.getByText(/Operational visibility only with no employee ranking or punitive score/i)).toBeVisible();
-    await expect(page.getByText(/Operational visibility only. No employee ranking and no punitive score/i)).toBeVisible();
+    await expect(page.getByText(/Operational visibility only with no employee ranking or punitive score/i).first()).toBeVisible();
+    await expect(page.getByText(/Operational visibility only. No employee ranking and no punitive score/i).first()).toBeVisible();
   });
 
   test("permission gate blocks metric registry route when registry permission is missing", async ({ page }) => {

@@ -20,7 +20,7 @@ vi.mock("../../shared/hooks/use-table-query-state", () => ({
   useTableQueryState: () => ({
     page: 1,
     pageSize: 20,
-    filters: { student_id: "", section_id: "" },
+    filters: { student_id: "", course_id: "", term_id: "", section_id: "" },
     sort: { key: "graded", direction: "desc" as const },
     setFilter: vi.fn(),
     resetFilters: vi.fn(),
@@ -53,6 +53,31 @@ vi.mock("../../modules/grades/hooks", () => ({
     refetch: vi.fn(),
   }),
   useUpsertGrade: () => ({ mutate: vi.fn(), isPending: false }),
+  useGradingScales: () => ({
+    data: { items: [], total: 0 },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+  useCreateGradingScale: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("../../modules/enrollments/hooks", () => ({
+  useEnrollments: () => ({
+    data: { items: [], total: 0 },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock("../../modules/students/hooks", () => ({
+  useStudents: () => ({
+    data: { items: [], total: 0 },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
 }));
 
 vi.mock("../../app/components/LanguageProvider", () => ({

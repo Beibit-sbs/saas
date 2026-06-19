@@ -22,10 +22,11 @@ from app.core.tenant import get_current_tenant
 from app.modules.observability.metrics import observe_scheduling_conflict
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.scheduling.dependencies import get_scheduling_db
-from app.modules.scheduling.models import DayOfWeek, LessonStatus
+from app.modules.scheduling.models import DayOfWeek, LessonStatus, SectionStatus
 from app.modules.scheduling.schemas import (
     ConflictReportSchema,
     CourseSectionCreateSchema,
+    CourseSectionListResponseSchema,
     CourseSectionReadSchema,
     CourseSectionUpdateSchema,
     DisciplineCreateSchema,
@@ -105,6 +106,37 @@ async def create_course_section(
         TenantResourceNotFoundError,
         DomainValidationError,
         OptimisticLockConflictError,
+    ) as exc:
+        raise _raise_scheduling_http_error(exc) from exc
+
+
+@router.get("/sections", response_model=CourseSectionListResponseSchema)
+async def list_course_sections(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    status: SectionStatus | None = Query(None),
+    term_id: int | None = Query(None, gt=0),
+    course_id: int | None = Query(None, gt=0),
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("scheduling.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: SchedulingDb = None,
+):
+    service = SchedulingService(db)
+    try:
+        return await service.list_course_sections(
+            tenant_id=int(tenant["id"]),
+            page=page,
+            page_size=page_size,
+            status=status,
+            term_id=term_id,
+            course_id=course_id,
+        )
+    except (
+        PermissionError,
+        ValueError,
+        TenantResourceNotFoundError,
+        DomainValidationError,
     ) as exc:
         raise _raise_scheduling_http_error(exc) from exc
 

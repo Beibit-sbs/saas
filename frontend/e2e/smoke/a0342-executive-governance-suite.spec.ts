@@ -967,8 +967,12 @@ test.describe("A-034.2 unified executive governance suite smoke", () => {
 
     await page.goto("/console/executive-control-tower");
 
-    await expect(page.getByTestId("computed-from-governance-workflows-label")).toBeVisible();
-    await expect(page.getByTestId("no-automated-decision-label")).toBeVisible();
+    await expect(page.getByTestId("computed-from-governance-workflows-label").first()).toContainText(
+      /Computed from governance workflows/i,
+    );
+    await expect(page.getByTestId("no-automated-decision-label").first()).toContainText(
+      /No automated decision is made by this dashboard/i,
+    );
     await expect(page.getByTestId("control-tower-nav-tabs")).toBeVisible();
     await expectNoOverclaim(page);
   });

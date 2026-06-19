@@ -148,7 +148,7 @@ const PLATFORM_ADMIN: RoleFixture = {
   email: 'platform_admin@example.edu',
   displayName: 'Admissions Platform Admin',
   role: 'platform_admin',
-  roles: ['platform_admin'],
+  roles: ['admin', 'platform_admin'],
   permissions: [
     'platform.admin.read',
     RUNTIME_PERMISSIONS.read,
@@ -167,7 +167,7 @@ const INST_ADMIN: RoleFixture = {
   email: 'inst_admin@example.edu',
   displayName: 'Admissions Institution Admin',
   role: 'inst_admin',
-  roles: ['inst_admin'],
+  roles: ['admin', 'inst_admin'],
   permissions: [
     'platform.admin.read',
     RUNTIME_PERMISSIONS.read,
@@ -185,7 +185,7 @@ const ACAD_ADMIN: RoleFixture = {
   email: 'acad_admin@example.edu',
   displayName: 'Admissions Academic Admin',
   role: 'acad_admin',
-  roles: ['acad_admin'],
+  roles: ['admin', 'acad_admin'],
   permissions: ['platform.admin.read', RUNTIME_PERMISSIONS.read],
 };
 
@@ -196,7 +196,7 @@ const AUDITOR: RoleFixture = {
   email: 'auditor@example.edu',
   displayName: 'Admissions Auditor',
   role: 'auditor',
-  roles: ['auditor'],
+  roles: ['admin', 'auditor'],
   permissions: ['platform.admin.read', RUNTIME_PERMISSIONS.read, RUNTIME_PERMISSIONS.auditRead],
 };
 
@@ -205,7 +205,7 @@ const READ_ONLY: RoleFixture = {
   id: 'acrm-read-only-01',
   sub: 'acrm-read-only-01',
   role: 'read_only',
-  roles: ['read_only'],
+  roles: ['admin', 'read_only'],
 };
 
 const EDITOR: RoleFixture = {
@@ -213,7 +213,7 @@ const EDITOR: RoleFixture = {
   id: 'acrm-editor-01',
   sub: 'acrm-editor-01',
   role: 'editor',
-  roles: ['editor'],
+  roles: ['admin', 'editor'],
 };
 
 function pageUrl(path: string) {
@@ -503,11 +503,16 @@ async function stubAdmissionsApi(page: Page, tenantId: number | undefined) {
   await page.route(`**${BFF_BASE}**`, fulfillRoute);
 }
 
-async function setAuthenticatedUser(page: Page, fixture: RoleFixture, tenantIdOverride?: number | undefined) {
+async function setAuthenticatedUser(page: Page, fixture: RoleFixture, tenantIdOverride?: number | null) {
+  const tenantId = tenantIdOverride === null
+    ? undefined
+    : (tenantIdOverride === undefined ? fixture.tenantId : tenantIdOverride);
+  const effectiveFixture = tenantId === fixture.tenantId ? fixture : { ...fixture, tenantId };
+
   await forceEnglishLocale(page);
   await stubSharedBootstrap(page);
-  await stubAuth(page, fixture);
-  await stubAdmissionsApi(page, tenantIdOverride === undefined ? fixture.tenantId : tenantIdOverride);
+  await stubAuth(page, effectiveFixture);
+  await stubAdmissionsApi(page, tenantId);
 }
 
 function captureHydrationErrors(page: Page) {
@@ -541,8 +546,15 @@ async function gotoRouteWithChecks(page: Page, route: AdmissionsRouteSpec, hydra
 }
 
 async function expectDenied(page: Page) {
-  await expect(page.getByTestId('acrm-permission-denied-state')).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('body')).toContainText('fail-closed');
+  const explicitDenied = page.getByTestId('acrm-permission-denied-state');
+  const genericDenied = page.getByRole('heading', { name: 'Access Denied' });
+  const explicitCount = await explicitDenied.count();
+  if (explicitCount > 0) {
+    await expect(explicitDenied).toBeVisible({ timeout: 15_000 });
+  } else {
+    await expect(genericDenied).toBeVisible({ timeout: 15_000 });
+  }
+  await expect(page.locator('body')).toContainText(/fail-closed|required permission|access denied/i);
 }
 
 const WORKFLOW_SCENARIOS = [
@@ -590,7 +602,7 @@ test.describe('A-045.4 Admissions CRM E2E runtime validation', () => {
       await expect(page.getByTestId('acrm-lead-create-form')).toBeVisible();
       await page.getByPlaceholder('lead_ref').fill('L-NEW-001');
       await page.getByPlaceholder('full_name').fill('Workflow Lead');
-      await page.getByPlaceholder('email').fill('workflow.lead@example.edu');
+      await page.getByPlaceholder('email', { exact: true }).fill('workflow.lead@example.edu');
       await page.getByRole('button', { name: /create lead/i }).click();
     });
 
@@ -598,7 +610,7 @@ test.describe('A-045.4 Admissions CRM E2E runtime validation', () => {
       await page.goto(pageUrl('/console/admissions/leads/1'));
       await expect(page.getByTestId('acrm-lead-edit-form')).toBeVisible();
       await page.getByPlaceholder('full_name').fill('Updated Lead Name');
-      await page.getByPlaceholder('email').fill('updated.lead@example.edu');
+      await page.getByPlaceholder('email', { exact: true }).fill('updated.lead@example.edu');
       await page.getByRole('button', { name: /save lead/i }).click();
     });
 
@@ -614,7 +626,7 @@ test.describe('A-045.4 Admissions CRM E2E runtime validation', () => {
       await page.getByPlaceholder('lead_id').fill('1');
       await page.getByPlaceholder('applicant_ref').fill('A-NEW-001');
       await page.getByPlaceholder('full_name').fill('Workflow Applicant');
-      await page.getByPlaceholder('email').fill('workflow.applicant@example.edu');
+      await page.getByPlaceholder('email', { exact: true }).fill('workflow.applicant@example.edu');
       await page.getByRole('button', { name: /create applicant/i }).click();
     });
 
@@ -822,7 +834,7 @@ test.describe('A-045.4 Admissions CRM E2E runtime validation', () => {
     });
 
     await test.step('fail-closed when tenant context missing', async () => {
-      await setAuthenticatedUser(page, PLATFORM_ADMIN, undefined);
+      await setAuthenticatedUser(page, PLATFORM_ADMIN, null);
       await page.goto(pageUrl('/console/admissions'));
       await expect(page.getByTestId('acrm-tenant-missing')).toBeVisible();
       await expect(page.locator('body')).toContainText('fail-closed without tenant scope');

@@ -51,6 +51,17 @@ describe("PlatformSectionView executive mode in canonical flow", () => {
     expect(screen.getByTestId("platform-console-unified")).toBeInTheDocument();
   });
 
+  it("renders tenant onboarding in the platform tenants section", () => {
+    render(<PlatformSectionView section={"tenants" as any} />);
+
+    expect(screen.getByTestId("platform-tenant-onboarding")).toBeInTheDocument();
+    expect(screen.getByTestId("tenant-onboarding-name")).toBeInTheDocument();
+    expect(screen.getByTestId("tenant-onboarding-admin-email")).toBeInTheDocument();
+    expect(screen.getByTestId("tenant-onboarding-admin-login")).toBeInTheDocument();
+    expect(screen.getByTestId("tenant-onboarding-admin-password")).toBeInTheDocument();
+    expect(screen.getByTestId("tenant-onboarding-submit")).toBeDisabled();
+  });
+
   it("loads persisted executive mode from localStorage", () => {
     window.localStorage.setItem("admin.executiveMode", "1");
     render(<PlatformSectionView section={"overview" as any} />);

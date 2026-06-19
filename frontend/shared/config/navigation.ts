@@ -257,6 +257,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ,
       },
       {
+        label: "Innovation / Commercialization",
+        href: "/console/innovation-commercialization",
+        icon: Bot,
+        permission: PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ,
+      },
+      {
         label: "Executive Governance Runtime",
         href: "/console/executive-governance",
         icon: Network,

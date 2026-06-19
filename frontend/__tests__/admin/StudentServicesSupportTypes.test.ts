@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  STUDENT_SERVICES_SUPPORT_BACKEND_ROUTE_COUNT,
   STUDENT_SERVICES_SUPPORT_PERMISSION_COUNT,
   STUDENT_SERVICES_SUPPORT_PLANNED_ROUTE_COUNT,
   STUDENT_SERVICES_SUPPORT_ROUTES,
@@ -9,6 +10,7 @@ import {
 describe('Student Services Support types and constants', () => {
   it('keeps planned route count fixed at 10', () => {
     expect(STUDENT_SERVICES_SUPPORT_PLANNED_ROUTE_COUNT).toBe(10);
+    expect(STUDENT_SERVICES_SUPPORT_BACKEND_ROUTE_COUNT).toBe(21);
     expect(STUDENT_SERVICES_SUPPORT_ROUTES).toHaveLength(10);
   });
 

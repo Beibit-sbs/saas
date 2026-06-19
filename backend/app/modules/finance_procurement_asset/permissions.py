@@ -9,6 +9,7 @@ DASHBOARD_READ = "finance_procurement_asset.dashboard.read"
 BILLING_READ = "finance_procurement_asset.billing.read"
 BILLING_EVIDENCE = "finance_procurement_asset.billing.evidence"
 RECEIVABLES_READ = "finance_procurement_asset.receivables.read"
+RECEIVABLES_METADATA = "finance_procurement_asset.receivables.metadata"
 BUDGET_PLANS_READ = "finance_procurement_asset.budget_plans.read"
 BUDGET_PLANS_MANAGE = "finance_procurement_asset.budget_plans.manage"
 BUDGET_CONTROLS_READ = "finance_procurement_asset.budget_controls.read"
@@ -49,6 +50,7 @@ BRIDGES_EXECUTIVE_READ = "finance_procurement_asset.bridges.executive.read"
 BRIDGES_HR_PAYROLL_READ = "finance_procurement_asset.bridges.hr_payroll.read"
 BRIDGES_DOCUMENT_CONTRACTS_READ = "finance_procurement_asset.bridges.document_contracts.read"
 BRIDGES_PROVIDER_READINESS_READ = "finance_procurement_asset.bridges.provider_readiness.read"
+BRIDGES_STUDENT_FINANCE_READ = "finance_procurement_asset.bridges.student_finance.read"
 METADATA_READ = "finance_procurement_asset.metadata.read"
 
 ALL_PERMISSIONS: frozenset[str] = frozenset(
@@ -60,6 +62,7 @@ ALL_PERMISSIONS: frozenset[str] = frozenset(
         BILLING_READ,
         BILLING_EVIDENCE,
         RECEIVABLES_READ,
+        RECEIVABLES_METADATA,
         BUDGET_PLANS_READ,
         BUDGET_PLANS_MANAGE,
         BUDGET_CONTROLS_READ,
@@ -100,9 +103,10 @@ ALL_PERMISSIONS: frozenset[str] = frozenset(
         BRIDGES_HR_PAYROLL_READ,
         BRIDGES_DOCUMENT_CONTRACTS_READ,
         BRIDGES_PROVIDER_READINESS_READ,
+        BRIDGES_STUDENT_FINANCE_READ,
         METADATA_READ,
     }
 )
 
 FINANCE_PROCUREMENT_ASSET_PERMISSIONS = sorted(ALL_PERMISSIONS)
-FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT = 48
+FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT = 50

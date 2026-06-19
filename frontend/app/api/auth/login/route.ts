@@ -32,7 +32,8 @@ function normalizeLogin(raw: unknown): string {
 }
 
 function isPlatformAdminLogin(raw: unknown): boolean {
-  return String(raw ?? "").trim().toLowerCase() === "local/platform_admin";
+  const normalized = String(raw ?? "").trim().toLowerCase();
+  return normalized === "platform_admin" || normalized === "local/platform_admin";
 }
 
 export async function POST(request: Request) {
@@ -47,16 +48,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: { detail: "tenant_id is required" } }, { status: 400 });
   }
 
+  const upstreamPayload = {
+    ...body,
+    login,
+  } as Record<string, unknown>;
+  delete upstreamPayload.username;
+  if (isPlatformLogin && (upstreamPayload.provider === undefined || upstreamPayload.provider === null || String(upstreamPayload.provider).trim() === "")) {
+    upstreamPayload.provider = "local";
+  }
+
   const upstream = await fetch(new URL("/api/auth/login", apiBase), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Tenant-ID": tenantId,
     },
-    body: JSON.stringify({
-      ...body,
-      login,
-    }),
+    body: JSON.stringify(upstreamPayload),
   });
 
   const data = await upstream.json();

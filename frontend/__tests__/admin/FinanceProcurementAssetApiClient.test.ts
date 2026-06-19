@@ -79,6 +79,7 @@ describe('Finance Procurement Asset API client', () => {
     await financeProcurementAssetApi.getFpaBridgeHrPayroll();
     await financeProcurementAssetApi.getFpaBridgeDocumentContracts();
     await financeProcurementAssetApi.getFpaBridgeProviderReadiness();
+    await financeProcurementAssetApi.getFpaBridgeStudentFinance();
     await financeProcurementAssetApi.getFpaRoles();
     await financeProcurementAssetApi.getFpaPermissions();
     await financeProcurementAssetApi.getFpaMetadataContract();
@@ -94,6 +95,7 @@ describe('Finance Procurement Asset API client', () => {
     expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeHrPayroll);
     expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeDocumentContracts);
     expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeProviderReadiness);
+    expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeStudentFinance);
     expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.roles);
     expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.permissions);
     expect(client.apiGet).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.metadataContract);
@@ -102,6 +104,7 @@ describe('Finance Procurement Asset API client', () => {
   it('maps metadata and evidence post helpers', async () => {
     await financeProcurementAssetApi.createFpaReadinessEvidence({ title: 'readiness' });
     await financeProcurementAssetApi.createFpaBillingEvidence({ title: 'billing' });
+    await financeProcurementAssetApi.createFpaReceivablesMetadata({ title: 'receivable' });
     await financeProcurementAssetApi.createFpaBudgetPlan({ title: 'budget plan' });
     await financeProcurementAssetApi.reviewFpaBudgetControl({ title: 'budget review' });
     await financeProcurementAssetApi.createFpaProcurementRequest({ title: 'request' });
@@ -111,6 +114,7 @@ describe('Finance Procurement Asset API client', () => {
 
     expect(client.apiPost).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.readinessEvidence, { title: 'readiness' });
     expect(client.apiPost).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.billingEvidence, { title: 'billing' });
+    expect(client.apiPost).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.receivablesMetadata, { title: 'receivable' });
     expect(client.apiPost).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.budgetPlans, { title: 'budget plan' });
     expect(client.apiPost).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.budgetControlsReview, { title: 'budget review' });
     expect(client.apiPost).toHaveBeenCalledWith(FINANCE_PROCUREMENT_ASSET_API_PATHS.procurementRequests, { title: 'request' });

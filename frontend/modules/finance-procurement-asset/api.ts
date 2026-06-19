@@ -63,6 +63,7 @@ export const financeProcurementAssetApi = {
   getFpaBridgeHrPayroll: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeHrPayroll),
   getFpaBridgeDocumentContracts: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeDocumentContracts),
   getFpaBridgeProviderReadiness: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeProviderReadiness),
+  getFpaBridgeStudentFinance: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeStudentFinance),
   getFpaHealth: () => apiGet<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.health),
   getFpaRoles: () => apiGet<FpaRole[]>(FINANCE_PROCUREMENT_ASSET_API_PATHS.roles),
   getFpaPermissions: () => apiGet<FpaPermission[]>(FINANCE_PROCUREMENT_ASSET_API_PATHS.permissions),
@@ -70,6 +71,7 @@ export const financeProcurementAssetApi = {
 
   createFpaReadinessEvidence: (payload: Payload<FpaReadiness>) => apiPost<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.readinessEvidence, payload),
   createFpaBillingEvidence: (payload: Payload<FpaBillingVisibility>) => apiPost<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.billingEvidence, payload),
+  createFpaReceivablesMetadata: (payload: Payload<FpaReceivablesMetadata>) => apiPost<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.receivablesMetadata, payload),
   createFpaBudgetPlan: (payload: Payload<FpaBudgetPlan>) => apiPost<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.budgetPlans, payload),
   reviewFpaBudgetControl: (payload: Payload<FpaBudgetControl>) => apiPost<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.budgetControlsReview, payload),
   createFpaProcurementRequest: (payload: Payload<FpaProcurementRequest>) => apiPost<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.procurementRequests, payload),

@@ -17,7 +17,7 @@ def test_module_constants_match_contract() -> None:
     assert models.API_PREFIX == "/api/admin/student-services"
     assert models.RUNTIME_MODE == "METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY"
     assert models.EXPECTED_TABLE_COUNT == 12
-    assert models.EXPECTED_ROUTE_COUNT == 15
+    assert models.EXPECTED_ROUTE_COUNT == 21
     assert models.EXPECTED_PERMISSION_COUNT == 6
     assert models.TABLE_PREFIX == "sss_"
 

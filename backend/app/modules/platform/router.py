@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
+from app.modules.auth.local_users_service import local_user_store
 from app.modules.billing.service import (
     change_subscription_plan,
     get_tenant_billing_state,
@@ -25,8 +26,9 @@ from app.modules.quotas.service import (
     update_plan_quotas,
 )
 from app.modules.rbac.security import get_actor, resolve_current_user_claims
-from app.modules.rbac.service import is_platform_admin
+from app.modules.rbac.service import is_platform_admin, sync_user_roles_from_trusted_source
 from app.modules.tenants.provisioning_service import TenantProvisioningService
+from app.modules.tenants.service import force_delete_tenant
 
 router = APIRouter(prefix="/platform", tags=["platform"])
 PLATFORM_TENANT_ID = 1
@@ -161,13 +163,29 @@ def create_platform_tenant(
 ) -> dict[str, object]:
     tenant_name = str(payload.get("tenant_name", "")).strip()
     admin_email = str(payload.get("admin_email", "")).strip().lower()
+    admin_login = str(payload.get("admin_login", "")).strip().lower()
+    admin_password = str(payload.get("admin_password", "")).strip()
+    admin_display_name = str(payload.get("admin_display_name", "Tenant Administrator")).strip() or "Tenant Administrator"
     plan_code = str(payload.get("plan_code", "free")).strip().lower() or "free"
+    create_admin_user = bool(admin_login or admin_password)
 
     if not tenant_name:
         raise HTTPException(status_code=400, detail="tenant_name is required")
     if not admin_email:
         raise HTTPException(status_code=400, detail="admin_email is required")
+    if create_admin_user:
+        if not admin_login:
+            raise HTTPException(status_code=400, detail="admin_login is required")
+        if not admin_password:
+            raise HTTPException(status_code=400, detail="admin_password is required")
+        if local_user_store.find_user_by_login(admin_login) is not None:
+            raise HTTPException(status_code=409, detail="login already exists")
+        if local_user_store.find_user_by_email(admin_email) is not None:
+            raise HTTPException(status_code=409, detail="email already exists")
 
+    created_tenant_id: int | None = None
+    created_user_id: str | None = None
+    admin_user: dict[str, object] | None = None
     try:
         result = TenantProvisioningService.create_tenant_with_defaults(
             tenant_name=tenant_name,
@@ -175,16 +193,51 @@ def create_platform_tenant(
             plan_code=plan_code,
             actor=actor,
         )
+        tenant_data = result.get("tenant") if isinstance(result.get("tenant"), dict) else {}
+        raw_tenant_id = tenant_data.get("id") if isinstance(tenant_data, dict) else None
+        if raw_tenant_id is None:
+            raise HTTPException(status_code=500, detail="tenant provisioning returned no tenant id")
+        created_tenant_id = int(raw_tenant_id)
+
+        if create_admin_user:
+            admin_user = local_user_store.create_user(
+                login=admin_login,
+                password=admin_password,
+                display_name=admin_display_name,
+                roles=["admin"],
+                default_language="ru",
+                tenant_id=created_tenant_id,
+                email=admin_email,
+            )
+            created_user_id = str(admin_user["user_id"])
+            sync_user_roles_from_trusted_source(str(admin_user["user_id"]), ["admin"], tenant_id=created_tenant_id)
     except ValueError as exc:
         detail = str(exc)
         status_code = 409 if "already exists" in detail else 400
         raise HTTPException(status_code=status_code, detail=detail) from exc
+    except HTTPException:
+        if created_user_id and created_tenant_id:
+            try:
+                local_user_store.delete_user(created_user_id, tenant_id=created_tenant_id)
+            except Exception:
+                pass
+        if create_admin_user and created_tenant_id:
+            force_delete_tenant(created_tenant_id)
+        raise
+    except Exception as exc:
+        if created_user_id and created_tenant_id:
+            try:
+                local_user_store.delete_user(created_user_id, tenant_id=created_tenant_id)
+            except Exception:
+                pass
+        if create_admin_user and created_tenant_id:
+            force_delete_tenant(created_tenant_id)
+        detail = str(exc)
+        status_code = 409 if "already exists" in detail.lower() else 400
+        raise HTTPException(status_code=status_code, detail=detail) from exc
 
-    invite_token = secrets.token_urlsafe(24)
-    tenant_data = result.get("tenant") if isinstance(result.get("tenant"), dict) else {}
-    created_tenant_id = tenant_data.get("id") if isinstance(tenant_data, dict) else None
-    if created_tenant_id is None:
-        raise HTTPException(status_code=500, detail="tenant provisioning returned no tenant id")
+    invite_token = None if admin_user is not None else secrets.token_urlsafe(24)
+    billing_state = get_tenant_billing_state(int(created_tenant_id))
     log_admin_action(
         actor=actor,
         tenant_id=int(created_tenant_id),
@@ -198,17 +251,23 @@ def create_platform_tenant(
             "tenant_id": created_tenant_id,
             "tenant_name": tenant_name,
             "admin_email": admin_email,
+            "admin_login": admin_login or None,
+            "admin_user_created": admin_user is not None,
             "plan_code": plan_code,
         },
     )
-    return {
+    response: dict[str, object] = {
         "tenant": result["tenant"],
         "plan": result["plan"],
-        "subscription": get_tenant_billing_state(int(created_tenant_id)).get("subscription"),
-        "billing_state": get_tenant_billing_state(int(created_tenant_id)).get("billing_state"),
+        "subscription": billing_state.get("subscription"),
+        "billing_state": billing_state.get("billing_state"),
         "admin_email": admin_email,
-        "invite_token": invite_token,
     }
+    if admin_user is not None:
+        response["admin_user"] = admin_user
+    if invite_token is not None:
+        response["invite_token"] = invite_token
+    return response
 
 
 @router.get("/tenants/{tenant_id}/billing")

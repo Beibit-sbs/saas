@@ -16,10 +16,11 @@ describe('Finance Procurement Asset boundary labels', () => {
     expect(FINANCE_PROCUREMENT_ASSET_BOUNDARY_COPY).toContain(FINANCE_PROCUREMENT_ASSET_BOUNDARY_LABELS.noProductionReadyClaim);
   });
 
-  it('covers all 22 routes with boundary labels', () => {
-    expect(Object.keys(FINANCE_PROCUREMENT_ASSET_PAGE_BOUNDARY_LABELS)).toHaveLength(22);
+  it('covers all 23 routes with boundary labels', () => {
+    expect(Object.keys(FINANCE_PROCUREMENT_ASSET_PAGE_BOUNDARY_LABELS)).toHaveLength(23);
     expect(FINANCE_PROCUREMENT_ASSET_PAGE_BOUNDARY_LABELS.overview).toContain('Metadata/evidence-only finance foundation');
     expect(FINANCE_PROCUREMENT_ASSET_PAGE_BOUNDARY_LABELS['payment-readiness']).toContain('Payment readiness only');
+    expect(FINANCE_PROCUREMENT_ASSET_PAGE_BOUNDARY_LABELS['student-finance']).toContain('paymentExecutionEnabled=false');
   });
 
   it('renders boundary labels in the banner', () => {

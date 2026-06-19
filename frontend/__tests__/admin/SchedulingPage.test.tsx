@@ -4,6 +4,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import SchedulingPage from "../../app/(admin)/console/scheduling/page";
 
 const hasPermissionMock = vi.fn();
+const useSectionsMock = vi.fn();
+const useCoursesMock = vi.fn();
+const useAcademicTermsMock = vi.fn();
+const useEnrollmentsMock = vi.fn();
+const useStudentsMock = vi.fn();
 
 vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
   Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
@@ -32,12 +37,7 @@ vi.mock("../../shared/hooks/use-table-query-state", () => ({
 }));
 
 vi.mock("../../modules/scheduling/hooks", () => ({
-  useSections: () => ({
-    data: { items: [], total: 0 },
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useSections: (...args: unknown[]) => useSectionsMock(...args),
   useLessonAttendance: () => ({
     data: {
       total: 1,
@@ -122,6 +122,14 @@ vi.mock("../../modules/scheduling/hooks", () => ({
     mutate: vi.fn(),
     isPending: false,
   }),
+  useCreateSection: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useCreateSectionLesson: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
   useAttendanceTrends: () => ({
     data: {
       section_id: 1,
@@ -138,6 +146,26 @@ vi.mock("../../modules/scheduling/hooks", () => ({
     error: null,
     refetch: vi.fn(),
   }),
+}));
+
+vi.mock("../../modules/courses/hooks", () => ({
+  useCourses: (...args: unknown[]) => useCoursesMock(...args),
+}));
+
+vi.mock("../../modules/academic-terms/hooks", () => ({
+  useAcademicTerms: (...args: unknown[]) => useAcademicTermsMock(...args),
+  useCreateAcademicTerm: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+}));
+
+vi.mock("../../modules/enrollments/hooks", () => ({
+  useEnrollments: (...args: unknown[]) => useEnrollmentsMock(...args),
+}));
+
+vi.mock("../../modules/students/hooks", () => ({
+  useStudents: (...args: unknown[]) => useStudentsMock(...args),
 }));
 
 vi.mock("../../shared/hooks/use-mutation-feedback", () => ({
@@ -163,6 +191,101 @@ describe("SchedulingPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hasPermissionMock.mockReturnValue(true);
+    useSectionsMock.mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useCoursesMock.mockReturnValue({
+      data: {
+        courses: [
+          {
+            id: 22,
+            tenant_id: "1",
+            course_code: "CS101",
+            title: "Intro to Programming",
+            credits: 3,
+            program_id: 1,
+            status: "active",
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useAcademicTermsMock.mockReturnValue({
+      data: {
+        total: 1,
+        page: 1,
+        page_size: 100,
+        items: [
+          {
+            id: 7,
+            tenant_id: 1,
+            term_code: "2026-FALL",
+            term_name: "Fall 2026",
+            start_date: "2026-09-01T00:00:00Z",
+            end_date: "2026-12-20T00:00:00Z",
+            add_drop_deadline: "2026-09-15T00:00:00Z",
+            status: "active",
+            metadata_json: {},
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useEnrollmentsMock.mockReturnValue({
+      data: {
+        total: 1,
+        page: 1,
+        page_size: 200,
+        items: [
+          {
+            id: 9001,
+            tenant_id: 1,
+            student_profile_id: 1001,
+            course_id: 22,
+            term_id: 7,
+            section_id: 55,
+            enrollment_status: "enrolled",
+            enrolled_at: "2026-09-01T00:00:00Z",
+            version: 1,
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useStudentsMock.mockReturnValue({
+      data: {
+        items: [
+          {
+            id: "1001",
+            student_number: "S-1001",
+            first_name: "Aida",
+            last_name: "Karim",
+            email: "aida@example.edu",
+            status: "active",
+            tenant_id: "1",
+            program: null,
+            enrollment_year: 2026,
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+        total: 1,
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
   });
 
   it("renders scheduling workspace when read permission exists", () => {
@@ -172,8 +295,84 @@ describe("SchedulingPage", () => {
     expect(screen.getByText("No sections found")).toBeInTheDocument();
     expect(screen.getByText("Lesson attendance")).toBeInTheDocument();
     expect(screen.getByText("Attendance risk summary")).toBeInTheDocument();
+    expect(screen.getByText("Academic term and section setup")).toBeInTheDocument();
     expect(screen.getByText("At-risk ratio (high+medium)")).toBeInTheDocument();
     expect(screen.getByText("Load lessons")).toBeInTheDocument();
+  });
+
+  it("renders course and term selectors for section creation", () => {
+    render(<SchedulingPage />);
+
+    expect(screen.getByTestId("course-section-course-select")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /CS101 - Intro to Programming/ })).toBeInTheDocument();
+    expect(screen.getByTestId("course-section-term-select")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /2026-FALL - Fall 2026/ })).toBeInTheDocument();
+  });
+
+  it("uses section and lesson selectors when sections are available", () => {
+    useSectionsMock.mockReturnValue({
+      data: {
+        items: [
+          {
+            id: 55,
+            tenant_id: 1,
+            course_id: 22,
+            term_id: 7,
+            section_code: "CS101-A",
+            instructor_id: "faculty-1",
+            max_capacity: 30,
+            status: "planned",
+            version: 1,
+          },
+        ],
+        total: 1,
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<SchedulingPage />);
+
+    expect(screen.getByTestId("lesson-section-select")).toBeInTheDocument();
+    fireEvent.change(screen.getByTestId("lesson-section-select"), { target: { value: "55" } });
+
+    expect(screen.getByText("Section #55 · lessons: 1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create lesson" })).toBeDisabled();
+    expect(screen.getByTestId("attendance-lesson-select")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /#501 \/ 2026-04-20 \/ Attendance checkpoint/ })).toBeInTheDocument();
+  });
+
+  it("uses enrolled students as attendance choices", () => {
+    useSectionsMock.mockReturnValue({
+      data: {
+        items: [
+          {
+            id: 55,
+            tenant_id: 1,
+            course_id: 22,
+            term_id: 7,
+            section_code: "CS101-A",
+            instructor_id: "faculty-1",
+            max_capacity: 30,
+            status: "planned",
+            version: 1,
+          },
+        ],
+        total: 1,
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<SchedulingPage />);
+
+    fireEvent.change(screen.getByTestId("lesson-section-select"), { target: { value: "55" } });
+    fireEvent.change(screen.getByTestId("attendance-lesson-select"), { target: { value: "501" } });
+
+    expect(screen.getByTestId("attendance-student-select")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /S-1001 \/ Aida Karim \/ Enrollment #9001/ })).toBeInTheDocument();
   });
 
   it("renders page-level severity filter in student risk timeline", () => {

@@ -289,6 +289,57 @@ export function FpaBridgeCard({ title, description, target }: { title: string; d
   );
 }
 
+export function FpaStudentFinanceBridgePanel() {
+  const bridgeSteps = [
+    { title: 'Student profile', href: '/console/students', detail: 'Identity, lifecycle status, and tenant-scoped student record.' },
+    { title: 'Enrollment context', href: '/console/enrollments', detail: 'Academic participation source for tuition and receivables review.' },
+    { title: 'Degree progress', href: '/console/degree-progress', detail: 'Completion state used for graduation and finance closure checks.' },
+    { title: 'Receivables metadata', href: '/console/finance-procurement-asset/receivables', detail: 'Read-only account visibility without creating charges.' },
+    { title: 'Payment readiness', href: '/console/finance-procurement-asset/payment-readiness', detail: 'Provider and payment boundary evidence with execution disabled.' },
+  ];
+
+  return (
+    <section className="rounded-xl border bg-card p-4" data-testid="fpa-student-finance-bridge-panel">
+      <div className="flex flex-wrap items-center gap-2">
+        <FpaHumanReviewBadge />
+        <FpaPaymentReadinessBadge />
+      </div>
+      <h3 className="mt-3 text-base font-semibold">Student academic lifecycle to finance</h3>
+      <div className="mt-4 grid gap-3 lg:grid-cols-5">
+        {bridgeSteps.map((step) => (
+          <Link key={step.title} href={step.href} className="rounded-lg border p-3 text-sm hover:bg-muted/50">
+            <div className="font-medium">{step.title}</div>
+            <p className="mt-2 text-xs text-muted-foreground">{step.detail}</p>
+          </Link>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
+        <div className="rounded-lg border p-3">tuitionChargeCreation=false</div>
+        <div className="rounded-lg border p-3">paymentExecutionEnabled=false</div>
+        <div className="rounded-lg border p-3">liveErpSync=false</div>
+      </div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="rounded-lg border p-3" data-testid="fpa-receivables-intake-shell">
+          <div className="text-sm font-medium">Receivables metadata intake</div>
+          <p className="mt-2 text-xs text-muted-foreground">POST /api/admin/finance-procurement-asset/receivables/metadata</p>
+          <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+            <li>source_module=students</li>
+            <li>source_record_id=student_profile_id</li>
+            <li>metadata.student_profile_id</li>
+            <li>metadata.enrollment_id</li>
+            <li>metadata.program_id</li>
+            <li>metadata.hardship_handoff_required</li>
+          </ul>
+        </div>
+        <Link href="/console/student-services-support/hardship" className="rounded-lg border p-3 hover:bg-muted/50" data-testid="fpa-hardship-handoff-link">
+          <div className="text-sm font-medium">Hardship handoff</div>
+          <p className="mt-2 text-xs text-muted-foreground">Human-review path for financial hardship support. No aid approval, debt cancellation, or billing mutation is exposed here.</p>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export function FpaReviewActionPanel({ title, permission, description }: { title: string; permission: string; description: string }) {
   return (
     <section className="rounded-xl border bg-card p-4" data-testid={`fpa-review-panel-${slugify(title)}`}>
@@ -415,6 +466,8 @@ function FpaPageContent({ model }: { model: FpaPageModel }) {
         </div>
 
         {model.route.dashboardLike || model.primaryWidgets.length > 0 ? <FpaDashboardGrid widgets={model.primaryWidgets} /> : null}
+
+        {model.route.key === 'student-finance' ? <FpaStudentFinanceBridgePanel /> : null}
 
         <section className="space-y-4" data-testid="fpa-operability-registry">
           <div className="space-y-1">

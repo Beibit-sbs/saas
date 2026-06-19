@@ -20,6 +20,8 @@ import {
   useDeleteCourse,
 } from "@/modules/courses/hooks";
 import type { Course } from "@/modules/courses/types";
+import { usePrograms } from "@/modules/programs/hooks";
+import type { Program } from "@/modules/programs/types";
 
 interface CourseFormState {
   course_code: string;
@@ -47,12 +49,18 @@ export default function CoursesPage() {
   const [form, setForm] = useState<CourseFormState>(EMPTY_FORM);
 
   const { data, isLoading, error, refetch } = useCourses();
+  const programsQuery = usePrograms();
   const createCourse = useCreateCourse();
   const updateCourse = useUpdateCourse(editCourse?.id ?? null);
   const deleteCourse = useDeleteCourse();
 
   const isSubmitting =
     createCourse.isPending || updateCourse.isPending || deleteCourse.isPending;
+  const programs = programsQuery.data?.programs ?? [];
+  const programById = useMemo(
+    () => new Map(programs.map((program) => [Number(program.id), program])),
+    [programs],
+  );
 
   const parsedCredits = Number.parseInt(form.credits, 10);
   const parsedProgramId = Number.parseInt(form.program_id, 10);
@@ -116,7 +124,10 @@ export default function CoursesPage() {
     {
       key: "program_id",
       header: tAny("courseProgramId"),
-      cell: (r) => String(r.program_id),
+      cell: (r) => {
+        const program = programById.get(Number(r.program_id));
+        return program ? `${program.program_code} - ${program.title}` : String(r.program_id);
+      },
       sortValue: (r) => r.program_id,
     },
     {
@@ -198,6 +209,7 @@ export default function CoursesPage() {
         <CourseForm
           form={form}
           setForm={setForm}
+          programs={programs}
           disabled={isSubmitting}
           canSave={isFormValid}
           onSave={() => {
@@ -232,6 +244,7 @@ export default function CoursesPage() {
         <CourseForm
           form={form}
           setForm={setForm}
+          programs={programs}
           disabled={isSubmitting}
           canSave={isFormValid}
           onSave={() => {
@@ -267,6 +280,7 @@ function CourseForm({
   canSave,
   disabled,
   saveLabel,
+  programs,
 }: {
   form: CourseFormState;
   setForm: (value: CourseFormState) => void;
@@ -274,6 +288,7 @@ function CourseForm({
   canSave: boolean;
   disabled: boolean;
   saveLabel: string;
+  programs: Program[];
 }) {
   const { t } = useLanguage();
   const tAny = (key: string) => t(key as never);
@@ -311,14 +326,31 @@ function CourseForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="course-program-id">{tAny("courseProgramId")}</Label>
-        <Input
-          id="course-program-id"
-          type="number"
-          min={1}
-          value={form.program_id}
-          onChange={(e) => setForm({ ...form, program_id: e.target.value })}
-          placeholder="1"
-        />
+        {programs.length > 0 ? (
+          <select
+            id="course-program-id"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={form.program_id}
+            onChange={(e) => setForm({ ...form, program_id: e.target.value })}
+            data-testid="course-program-select"
+          >
+            <option value="">Select program</option>
+            {programs.map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.program_code} - {program.title} (#{program.id})
+              </option>
+            ))}
+          </select>
+        ) : (
+          <Input
+            id="course-program-id"
+            type="number"
+            min={1}
+            value={form.program_id}
+            onChange={(e) => setForm({ ...form, program_id: e.target.value })}
+            placeholder="1"
+          />
+        )}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="course-status">{tAny("courseStatus")}</Label>

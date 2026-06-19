@@ -10,7 +10,7 @@ export const STUDENT_SERVICES_SUPPORT_MODULE = 'student_services_support';
 export const STUDENT_SERVICES_SUPPORT_ROUTE_FAMILY = '/console/student-services-support';
 export const STUDENT_SERVICES_SUPPORT_API_BASE = '/api/admin/student-services';
 export const STUDENT_SERVICES_SUPPORT_PLANNED_ROUTE_COUNT = 10;
-export const STUDENT_SERVICES_SUPPORT_BACKEND_ROUTE_COUNT = 15;
+export const STUDENT_SERVICES_SUPPORT_BACKEND_ROUTE_COUNT = 21;
 export const STUDENT_SERVICES_SUPPORT_PERMISSION_COUNT = 6;
 export const STUDENT_SERVICES_SUPPORT_RUNTIME_MODE = 'METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY';
 export const STUDENT_SERVICES_SUPPORT_DATA_SOURCE = 'computed_from_student_services_support_records';
@@ -71,6 +71,14 @@ export const STUDENT_SERVICES_SUPPORT_API_PATHS = {
   caseNotes: (caseId: number) => apiPath(`/cases/${caseId}/notes`),
   caseEvidence: (caseId: number) => apiPath(`/cases/${caseId}/evidence`),
   hardship: apiPath('/hardship'),
+  hardshipFromFinanceHandoff: apiPath('/hardship/from-finance-handoff'),
+  financeHardshipReviewerQueue: apiPath('/hardship/from-finance-handoff/reviewer-queue'),
+  financeHardshipFinanceOfficeReferralQueue: apiPath('/hardship/from-finance-handoff/finance-office-referral-queue'),
+  financeHardshipEvidenceGap: (hardshipId: number) => apiPath(`/hardship/from-finance-handoff/${hardshipId}/evidence-gap`),
+  financeHardshipHumanReviewOutcomeNote: (hardshipId: number) =>
+    apiPath(`/hardship/from-finance-handoff/${hardshipId}/human-review-outcome-note`),
+  financeHardshipFinanceOfficeReferral: (hardshipId: number) =>
+    apiPath(`/hardship/from-finance-handoff/${hardshipId}/finance-office-referral`),
   accommodations: apiPath('/accommodations'),
   complaints: apiPath('/complaints'),
   escalations: apiPath('/escalations'),
@@ -119,7 +127,7 @@ export const STUDENT_SERVICES_SUPPORT_ROUTES: StudentServicesSupportRouteDefinit
     'Hardship Readiness',
     `${STUDENT_SERVICES_SUPPORT_ROUTE_FAMILY}/hardship`,
     STUDENT_SERVICES_SUPPORT_PERMISSION_VALUES.write,
-    [endpoint('POST', '/hardship')],
+    [endpoint('POST', '/hardship'), endpoint('POST', '/hardship/from-finance-handoff')],
   ),
   routeDefinition(
     'accommodations',
@@ -147,7 +155,14 @@ export const STUDENT_SERVICES_SUPPORT_ROUTES: StudentServicesSupportRouteDefinit
     'Student Support Dashboard',
     `${STUDENT_SERVICES_SUPPORT_ROUTE_FAMILY}/dashboard`,
     STUDENT_SERVICES_SUPPORT_PERMISSION_VALUES.dashboardRead,
-    [endpoint('GET', '/dashboard/summary')],
+    [
+      endpoint('GET', '/dashboard/summary'),
+      endpoint('GET', '/hardship/from-finance-handoff/reviewer-queue'),
+      endpoint('GET', '/hardship/from-finance-handoff/finance-office-referral-queue'),
+      endpoint('POST', '/hardship/from-finance-handoff/{hardship_id}/evidence-gap'),
+      endpoint('POST', '/hardship/from-finance-handoff/{hardship_id}/human-review-outcome-note'),
+      endpoint('POST', '/hardship/from-finance-handoff/{hardship_id}/finance-office-referral'),
+    ],
     true,
   ),
 ];

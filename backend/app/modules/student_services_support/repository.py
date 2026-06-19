@@ -121,6 +121,20 @@ def create_hardship_request(db: Session, tenant_id: int, **kwargs) -> models.Har
     return obj
 
 
+def get_hardship_request(db: Session, tenant_id: int, hardship_id: int) -> models.HardshipSupportRequest | None:
+    return _tenant_filtered_get(db, models.HardshipSupportRequest, tenant_id, hardship_id)
+
+
+def update_hardship_request(db: Session, tenant_id: int, hardship_id: int, **kwargs) -> models.HardshipSupportRequest:
+    obj = _require(get_hardship_request(db, tenant_id, hardship_id), tenant_id, "hardship_request", hardship_id)
+    for key, value in kwargs.items():
+        setattr(obj, key, value)
+    obj.updated_at = _now()
+    db.flush()
+    db.refresh(obj)
+    return obj
+
+
 def create_accommodation_request(db: Session, tenant_id: int, **kwargs) -> models.DisabilityAccommodationRequest:
     obj = models.DisabilityAccommodationRequest(tenant_id=tenant_id, created_at=_now(), updated_at=_now(), **kwargs)
     db.add(obj)
@@ -168,3 +182,43 @@ def count_by_status(db: Session, model, tenant_id: int) -> dict[str, int]:
         select(model.status, func.count()).where(model.tenant_id == validate_tenant_id_provided(tenant_id)).group_by(model.status)
     ).all()
     return {str(status): int(total) for status, total in rows}
+
+
+def count_hardship_readiness_by_source_flow(db: Session, tenant_id: int, source_flow: str) -> dict[str, int]:
+    rows = db.execute(
+        select(models.HardshipSupportRequest.readiness_status, func.count())
+        .where(
+            and_(
+                models.HardshipSupportRequest.tenant_id == validate_tenant_id_provided(tenant_id),
+                models.HardshipSupportRequest.metadata_json["source_flow"].as_string() == source_flow,
+            )
+        )
+        .group_by(models.HardshipSupportRequest.readiness_status)
+    ).all()
+    return {str(status): int(total) for status, total in rows}
+
+
+def list_hardship_reviewer_queue_by_source_flow(
+    db: Session,
+    tenant_id: int,
+    source_flow: str,
+) -> list[tuple[models.HardshipSupportRequest, models.StudentServiceRequest | None]]:
+    tenant_id = validate_tenant_id_provided(tenant_id)
+    rows = db.execute(
+        select(models.HardshipSupportRequest, models.StudentServiceRequest)
+        .outerjoin(
+            models.StudentServiceRequest,
+            and_(
+                models.StudentServiceRequest.tenant_id == tenant_id,
+                models.StudentServiceRequest.id == models.HardshipSupportRequest.request_id,
+            ),
+        )
+        .where(
+            and_(
+                models.HardshipSupportRequest.tenant_id == tenant_id,
+                models.HardshipSupportRequest.metadata_json["source_flow"].as_string() == source_flow,
+            )
+        )
+        .order_by(models.HardshipSupportRequest.created_at.desc())
+    ).all()
+    return [(hardship, service_request) for hardship, service_request in rows]

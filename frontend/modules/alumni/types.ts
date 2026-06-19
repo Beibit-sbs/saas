@@ -35,3 +35,13 @@ export interface AlumniStatusUpdatePayload {
   status: AlumniStatus;
   notes?: string | null;
 }
+
+export interface AlumniBrainContext {
+  module: "alumni";
+  tenant_id: number;
+  total_records: number;
+  by_status: Record<string, number>;
+  by_engagement_type: Record<string, number>;
+  inactive_count: number;
+  risk_level: "low" | "medium" | "high" | string;
+}

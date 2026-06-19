@@ -4,6 +4,7 @@ import logging
 from decimal import Decimal
 
 from sqlalchemy import and_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.module_helpers.audit_helpers import build_audit_action
@@ -21,6 +22,10 @@ from app.modules.degree_progress.schemas import (
     DegreeProgressConsistencyReportSchema,
     DegreeProgressSchema,
     GraduationEligibilitySchema,
+    ProgramRequirementCreateSchema,
+    ProgramRequirementItemReadSchema,
+    ProgramRequirementListResponseSchema,
+    ProgramRequirementReadSchema,
     RequirementStatusSchema,
 )
 from app.modules.students.models import StudentProgramBindingModel, StudentProgramBindingState, StudentProfileModel
@@ -245,6 +250,134 @@ class DegreeProgressService:
             )
             .order_by(ProgramRequirementItemModel.required.desc(), ProgramRequirementItemModel.id)
         ).scalars().all()
+
+    @staticmethod
+    def _requirement_read_schema(
+        requirement: ProgramRequirementModel,
+        items: list[ProgramRequirementItemModel],
+    ) -> ProgramRequirementReadSchema:
+        return ProgramRequirementReadSchema(
+            id=requirement.id,
+            tenant_id=requirement.tenant_id,
+            program_id=requirement.program_id,
+            name=requirement.name,
+            minimum_credits=int(requirement.minimum_credits),
+            minimum_gpa=Decimal(str(requirement.minimum_gpa)),
+            is_active=bool(requirement.is_active),
+            items=[ProgramRequirementItemReadSchema.model_validate(item) for item in items],
+        )
+
+    async def create_program_requirement(
+        self,
+        tenant_id: int,
+        *,
+        request: ProgramRequirementCreateSchema,
+        actor_id: str,
+    ) -> ProgramRequirementReadSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        if not str(actor_id or "").strip():
+            raise PermissionError("actor is required for degree requirement creation")
+
+        for item in request.items:
+            self._check_course_exists_in_tenant(tenant_id, item.course_id)
+
+        requirement = ProgramRequirementModel(
+            tenant_id=tenant_id,
+            program_id=request.program_id,
+            name=request.name.strip(),
+            minimum_credits=request.minimum_credits,
+            minimum_gpa=Decimal(str(request.minimum_gpa)),
+            is_active=request.is_active,
+        )
+        self.db.add(requirement)
+        self.db.flush()
+
+        items = [
+            ProgramRequirementItemModel(
+                tenant_id=tenant_id,
+                requirement_id=requirement.id,
+                course_id=item.course_id,
+                required=item.required,
+                credits=item.credits,
+            )
+            for item in request.items
+        ]
+        self.db.add_all(items)
+        self.db.flush()
+
+        _audit(
+            actor_id,
+            build_audit_action("degree_progress", "requirement", "created"),
+            "/internal/degree-progress/requirements/create",
+            {
+                "requirement_id": requirement.id,
+                "program_id": requirement.program_id,
+                "item_count": len(items),
+            },
+            tenant_id,
+        )
+
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise DomainValidationError("Unable to create degree requirement due to constraint violation") from exc
+
+        self.db.refresh(requirement)
+        for item in items:
+            self.db.refresh(item)
+
+        return self._requirement_read_schema(requirement, items)
+
+    async def list_program_requirements(
+        self,
+        tenant_id: int,
+        *,
+        program_id: int | None = None,
+        active_only: bool = True,
+    ) -> ProgramRequirementListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        filters = [ProgramRequirementModel.tenant_id == tenant_id]
+        if program_id is not None:
+            filters.append(ProgramRequirementModel.program_id == program_id)
+        if active_only:
+            filters.append(ProgramRequirementModel.is_active.is_(True))
+
+        requirements = self.db.execute(
+            select(ProgramRequirementModel)
+            .where(and_(*filters))
+            .order_by(ProgramRequirementModel.program_id, ProgramRequirementModel.id)
+        ).scalars().all()
+
+        requirement_ids = [requirement.id for requirement in requirements]
+        item_map: dict[int, list[ProgramRequirementItemModel]] = {
+            requirement_id: [] for requirement_id in requirement_ids
+        }
+        if requirement_ids:
+            items = self.db.execute(
+                select(ProgramRequirementItemModel)
+                .where(
+                    and_(
+                        ProgramRequirementItemModel.tenant_id == tenant_id,
+                        ProgramRequirementItemModel.requirement_id.in_(requirement_ids),
+                    )
+                )
+                .order_by(
+                    ProgramRequirementItemModel.requirement_id,
+                    ProgramRequirementItemModel.required.desc(),
+                    ProgramRequirementItemModel.id,
+                )
+            ).scalars().all()
+            for item in items:
+                item_map.setdefault(item.requirement_id, []).append(item)
+
+        return ProgramRequirementListResponseSchema(
+            total=len(requirements),
+            items=[
+                self._requirement_read_schema(requirement, item_map.get(requirement.id, []))
+                for requirement in requirements
+            ],
+        )
 
     async def evaluate_degree_progress(
         self,

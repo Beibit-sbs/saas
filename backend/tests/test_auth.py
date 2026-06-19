@@ -671,3 +671,19 @@ def test_bearer_only_mutation_without_csrf_token_is_allowed() -> None:
     )
     assert response.status_code == 200
     assert response.json()["language"] == "en"
+
+
+def test_get_language_preference_compatibility_endpoint() -> None:
+    client.cookies.clear()
+    headers = _auth_headers("student.001", ["student"])
+
+    set_response = client.put(
+        "/api/auth/me/preferences/language",
+        json={"language": "en"},
+        headers=headers,
+    )
+    assert set_response.status_code == 200
+
+    get_response = client.get("/api/auth/me/preferences/language", headers=headers)
+    assert get_response.status_code == 200
+    assert get_response.json()["language"] == "en"

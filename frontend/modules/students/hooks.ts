@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { studentsApi } from "./api";
-import type { CreateStudentPayload, UpdateStudentPayload } from "./types";
+import type {
+  BindStudentProgramPayload,
+  ChangeStudentStatusPayload,
+  CreateStudentPayload,
+  UpdateStudentPayload,
+} from "./types";
 
 export const STUDENTS_KEY = "students";
 
@@ -42,10 +47,41 @@ export function useUpdateStudent() {
   });
 }
 
+export function useChangeStudentStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: ChangeStudentStatusPayload }) =>
+      studentsApi.changeStatus(id, payload),
+    onSuccess: async (_student, variables) => {
+      await qc.invalidateQueries({ queryKey: [STUDENTS_KEY, variables.id] });
+      await qc.invalidateQueries({ queryKey: [STUDENTS_KEY] });
+    },
+  });
+}
+
 export function useDeleteStudent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => studentsApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: [STUDENTS_KEY] }),
+  });
+}
+
+export function useActiveStudentProgram(studentId: string) {
+  return useQuery({
+    queryKey: [STUDENTS_KEY, studentId, "active-program"],
+    queryFn: () => studentsApi.getActiveProgram(studentId),
+    enabled: !!studentId,
+  });
+}
+
+export function useBindStudentProgram(studentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BindStudentProgramPayload) => studentsApi.bindProgram(studentId, payload),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: [STUDENTS_KEY, studentId, "active-program"] });
+      await qc.invalidateQueries({ queryKey: [STUDENTS_KEY] });
+    },
   });
 }

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/shared/api/client";
-import type { Transcript, TranscriptSnapshot } from "./types";
+import type { Transcript, TranscriptSnapshot, TranscriptSnapshotMutationResponse } from "./types";
 
 export const TRANSCRIPTS_KEY = "transcripts";
 
@@ -16,7 +16,9 @@ export function useCreateTranscriptSnapshot(studentId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => apiPost<TranscriptSnapshot>(`/api/admin/students/${studentId}/transcript/snapshot`),
+    mutationFn: () =>
+      apiPost<TranscriptSnapshotMutationResponse>(`/api/admin/students/${studentId}/transcript/snapshot`)
+        .then((response) => response.snapshot),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [TRANSCRIPTS_KEY, studentId] });
     },

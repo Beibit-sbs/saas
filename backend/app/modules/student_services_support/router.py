@@ -192,6 +192,103 @@ def create_hardship_support_request_endpoint(
         _handle(exc)
 
 
+@router.post("/hardship/from-finance-handoff", response_model=schemas.HardshipReadinessItemResponse, status_code=201)
+def create_hardship_support_request_from_finance_handoff_endpoint(
+    payload: schemas.FinanceHardshipHandoffCreateRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.WRITE))],
+    tenant_id: _Tenant,
+    db: _DB,
+) -> schemas.HardshipReadinessItemResponse:
+    try:
+        return service.create_hardship_support_request_from_finance_handoff(db, tenant_id, actor, payload)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/hardship/from-finance-handoff/reviewer-queue", response_model=schemas.FinanceHardshipReviewerQueueResponse)
+def list_finance_hardship_reviewer_queue_endpoint(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant_id: _Tenant,
+    db: _DB,
+) -> schemas.FinanceHardshipReviewerQueueResponse:
+    try:
+        return service.list_finance_hardship_reviewer_queue(db, tenant_id, actor)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get(
+    "/hardship/from-finance-handoff/finance-office-referral-queue",
+    response_model=schemas.FinanceHardshipFinanceOfficeReferralQueueResponse,
+)
+def list_finance_hardship_finance_office_referral_queue_endpoint(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant_id: _Tenant,
+    db: _DB,
+) -> schemas.FinanceHardshipFinanceOfficeReferralQueueResponse:
+    try:
+        return service.list_finance_hardship_finance_office_referral_queue(db, tenant_id, actor)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/hardship/from-finance-handoff/{hardship_id}/evidence-gap",
+    response_model=schemas.FinanceHardshipEvidenceGapIntakeResponse,
+)
+def intake_finance_hardship_evidence_gap_endpoint(
+    hardship_id: int,
+    payload: schemas.FinanceHardshipEvidenceGapIntakeRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.WRITE))],
+    tenant_id: _Tenant,
+    db: _DB,
+) -> schemas.FinanceHardshipEvidenceGapIntakeResponse:
+    try:
+        return service.intake_finance_hardship_evidence_gap(db, tenant_id, actor, hardship_id, payload)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/hardship/from-finance-handoff/{hardship_id}/human-review-outcome-note",
+    response_model=schemas.FinanceHardshipHumanReviewOutcomeNoteResponse,
+)
+def record_finance_hardship_human_review_outcome_note_endpoint(
+    hardship_id: int,
+    payload: schemas.FinanceHardshipHumanReviewOutcomeNoteRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.WRITE))],
+    tenant_id: _Tenant,
+    db: _DB,
+) -> schemas.FinanceHardshipHumanReviewOutcomeNoteResponse:
+    try:
+        return service.record_finance_hardship_human_review_outcome_note(db, tenant_id, actor, hardship_id, payload)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/hardship/from-finance-handoff/{hardship_id}/finance-office-referral",
+    response_model=schemas.FinanceHardshipFinanceOfficeReferralResponse,
+)
+def create_finance_hardship_finance_office_referral_endpoint(
+    hardship_id: int,
+    payload: schemas.FinanceHardshipFinanceOfficeReferralRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.WRITE))],
+    tenant_id: _Tenant,
+    db: _DB,
+) -> schemas.FinanceHardshipFinanceOfficeReferralResponse:
+    try:
+        return service.create_finance_hardship_finance_office_referral(db, tenant_id, actor, hardship_id, payload)
+    except Exception as exc:
+        _handle(exc)
+
+
 @router.post("/accommodations", response_model=schemas.AccommodationReadinessItemResponse, status_code=201)
 def create_disability_accommodation_request_endpoint(
     payload: schemas.DisabilityAccommodationCreateRequest,

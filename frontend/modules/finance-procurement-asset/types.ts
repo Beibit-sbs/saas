@@ -21,6 +21,7 @@ export type FpaRouteKey =
   | 'bank-readiness'
   | 'provider-readiness'
   | 'bridges'
+  | 'student-finance'
   | 'audit'
   | 'limitations';
 

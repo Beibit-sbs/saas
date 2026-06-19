@@ -10,9 +10,9 @@ import {
 import { FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES } from '@/modules/finance-procurement-asset/constants';
 
 describe('Finance Procurement Asset guards', () => {
-  it('keeps the full permission inventory explicit at 48 entries', () => {
-    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(48);
-    expect(FINANCE_PROCUREMENT_ASSET_PERMISSIONS).toHaveLength(48);
+  it('keeps the full permission inventory explicit at 50 entries', () => {
+    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(50);
+    expect(FINANCE_PROCUREMENT_ASSET_PERMISSIONS).toHaveLength(50);
   });
 
   it('fails closed when user permissions are missing', () => {
@@ -25,10 +25,11 @@ describe('Finance Procurement Asset guards', () => {
     expect(hasAnyFpaPermission(['finance_procurement_asset.unknown'], [FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.overviewRead])).toBe(false);
   });
 
-  it('maps all 22 routes to required permissions', () => {
-    expect(Object.keys(FINANCE_PROCUREMENT_ASSET_ROUTE_PERMISSION_MAP)).toHaveLength(22);
+  it('maps all 23 routes to required permissions', () => {
+    expect(Object.keys(FINANCE_PROCUREMENT_ASSET_ROUTE_PERMISSION_MAP)).toHaveLength(23);
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_PERMISSION_MAP.overview).toBe(FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.overviewRead);
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_PERMISSION_MAP['provider-readiness']).toBe(FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.providerReadinessRead);
+    expect(FINANCE_PROCUREMENT_ASSET_ROUTE_PERMISSION_MAP['student-finance']).toBe(FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bridgesStudentFinanceRead);
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_PERMISSION_MAP.audit).toBe(FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.auditRead);
   });
 

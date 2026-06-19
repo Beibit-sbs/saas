@@ -340,6 +340,10 @@ def get_bridge_provider_readiness(db: Session, tenant_id: int) -> schemas.FpaBri
     return _bridge_response(db, tenant_id, "provider_readiness")
 
 
+def get_bridge_student_finance(db: Session, tenant_id: int) -> schemas.FpaBridgeResponse:
+    return _bridge_response(db, tenant_id, "student_finance")
+
+
 def get_health(db: Session, tenant_id: int) -> dict[str, Any]:
     del db
     tenant_id = _validate_tenant(tenant_id)
@@ -432,6 +436,10 @@ def create_readiness_evidence(db: Session, tenant_id: int, actor_user_id: str, r
 
 def create_billing_evidence(db: Session, tenant_id: int, actor_user_id: str, request: schemas.FpaMetadataCreateRequest) -> dict[str, Any]:
     return _create_metadata_record(db, tenant_id, actor_user_id, "billing", request, status_default="VISIBLE_METADATA_ONLY")
+
+
+def create_receivables_metadata(db: Session, tenant_id: int, actor_user_id: str, request: schemas.FpaMetadataCreateRequest) -> dict[str, Any]:
+    return _create_metadata_record(db, tenant_id, actor_user_id, "receivables", request, status_default="VISIBLE_METADATA_ONLY")
 
 
 def create_budget_plan(db: Session, tenant_id: int, actor_user_id: str, request: schemas.FpaMetadataCreateRequest) -> dict[str, Any]:

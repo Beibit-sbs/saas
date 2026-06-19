@@ -9,6 +9,11 @@ import type {
 
 const BASE = "/api/admin/org-units";
 
+type OrgUnitMutationResponse = {
+  unit: OrgUnit;
+  idempotent_replay: boolean;
+};
+
 export const ORG_UNITS_KEY = "org-units";
 export const ORG_UNITS_TREE_KEY = "org-units-tree";
 
@@ -33,7 +38,7 @@ export function useCreateOrgUnit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateOrgUnitPayload) =>
-      apiPost<OrgUnit>(BASE, payload),
+      apiPost<OrgUnitMutationResponse>(BASE, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [ORG_UNITS_KEY] });
       qc.invalidateQueries({ queryKey: [ORG_UNITS_TREE_KEY] });
@@ -45,7 +50,7 @@ export function useUpdateOrgUnit(unitId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpdateOrgUnitPayload) =>
-      apiPatch<OrgUnit>(`${BASE}/${unitId}`, payload),
+      apiPatch<OrgUnitMutationResponse>(`${BASE}/${unitId}`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [ORG_UNITS_KEY] });
       qc.invalidateQueries({ queryKey: [ORG_UNITS_TREE_KEY] });
@@ -56,7 +61,7 @@ export function useUpdateOrgUnit(unitId: number) {
 export function useDeactivateOrgUnit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (unitId: number) => apiDelete<OrgUnit>(`${BASE}/${unitId}`),
+    mutationFn: (unitId: number) => apiDelete<OrgUnitMutationResponse>(`${BASE}/${unitId}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [ORG_UNITS_KEY] });
       qc.invalidateQueries({ queryKey: [ORG_UNITS_TREE_KEY] });

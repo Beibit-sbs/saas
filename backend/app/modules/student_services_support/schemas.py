@@ -109,6 +109,38 @@ class HardshipSupportCreateRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class FinanceHardshipHandoffCreateRequest(BaseModel):
+    student_id: str = Field(min_length=1, max_length=128)
+    receivables_metadata_id: int | None = Field(default=None, ge=1)
+    evidence_refs: list[str] = Field(default_factory=list)
+    support_priority: SupportPriority = "medium"
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class FinanceHardshipEvidenceGapIntakeRequest(BaseModel):
+    evidence_type: str = Field(min_length=1, max_length=128)
+    evidence_ref: str | None = Field(default=None, max_length=255)
+    satisfies_gap: str = Field(min_length=1, max_length=128)
+    source_available: bool = False
+    limitations: str | None = Field(default=None, max_length=1000)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class FinanceHardshipHumanReviewOutcomeNoteRequest(BaseModel):
+    outcome_label: str = Field(min_length=1, max_length=128)
+    reviewer_recommendation: str | None = Field(default=None, max_length=255)
+    note: str = Field(min_length=1, max_length=4000)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class FinanceHardshipFinanceOfficeReferralRequest(BaseModel):
+    referral_target: str = Field(min_length=1, max_length=255)
+    referral_reason: str = Field(min_length=1, max_length=1000)
+    referral_priority: SupportPriority = "medium"
+    note: str | None = Field(default=None, max_length=4000)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class DisabilityAccommodationCreateRequest(BaseModel):
     request_id: int | None = None
     evidence_refs: list[str] = Field(default_factory=list)
@@ -246,6 +278,101 @@ class EscalationItemResponse(SssBaseResponse):
     item: EscalationRecord
 
 
+class FinanceHardshipHandoffDashboardVisibility(BaseModel):
+    source_module: str = "finance_procurement_asset"
+    source_flow: str = "student_finance_receivables_handoff"
+    total: int = 0
+    review_queue_count: int = 0
+    missing_evidence_count: int = 0
+    readiness_counts: dict[str, int] = Field(default_factory=dict)
+    no_automatic_aid_decision: bool = True
+    no_billing_balance_mutation: bool = True
+    human_review_required: bool = True
+
+
+class FinanceHardshipReviewerQueueItem(BaseModel):
+    hardship_id: int
+    request_id: int | None = None
+    student_id: str | None = None
+    support_priority: str | None = None
+    hardship_status: str
+    service_request_status: str | None = None
+    readiness_status: ReadinessStatus
+    missing_evidence: list[str] = Field(default_factory=list)
+    recommended_next_step: str | None = None
+    receivables_metadata_id: int | None = None
+    source_module: str = "finance_procurement_asset"
+    source_flow: str = "student_finance_receivables_handoff"
+    no_automatic_aid_decision: bool = True
+    no_billing_balance_mutation: bool = True
+    human_review_required: bool = True
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class FinanceHardshipReviewerQueueResponse(SssBaseResponse):
+    data_source: str = "computed_from_student_services_support_records"
+    incomplete_data: bool = False
+    items: list[FinanceHardshipReviewerQueueItem] = Field(default_factory=list)
+
+
+class FinanceHardshipEvidenceGapIntakeResponse(SssBaseResponse):
+    item: ReadinessRecord
+    evidence_metadata: dict[str, Any] = Field(default_factory=dict)
+    satisfied_gap: str
+    remaining_missing_evidence: list[str] = Field(default_factory=list)
+    no_automatic_aid_decision: bool = True
+    no_billing_balance_mutation: bool = True
+
+
+class FinanceHardshipHumanReviewOutcomeNoteResponse(SssBaseResponse):
+    item: ReadinessRecord
+    outcome_note_metadata: dict[str, Any] = Field(default_factory=dict)
+    outcome_label: str
+    reviewer_recommendation: str | None = None
+    no_automatic_aid_decision: bool = True
+    no_billing_balance_mutation: bool = True
+
+
+class FinanceHardshipFinanceOfficeReferralResponse(SssBaseResponse):
+    item: ReadinessRecord
+    referral_metadata: dict[str, Any] = Field(default_factory=dict)
+    referral_target: str
+    referral_priority: SupportPriority
+    no_automatic_aid_decision: bool = True
+    no_billing_balance_mutation: bool = True
+    no_payment_execution: bool = True
+
+
+class FinanceHardshipFinanceOfficeReferralQueueItem(BaseModel):
+    hardship_id: int
+    request_id: int | None = None
+    student_id: str | None = None
+    support_priority: str | None = None
+    hardship_status: str
+    readiness_status: ReadinessStatus
+    receivables_metadata_id: int | None = None
+    referral_target: str | None = None
+    referral_reason: str | None = None
+    referral_priority: str | None = None
+    note: str | None = None
+    referred_by_user_id: str | None = None
+    source_module: str = "student_services_support"
+    target_module: str = "finance_procurement_asset"
+    no_automatic_aid_decision: bool = True
+    no_billing_balance_mutation: bool = True
+    no_payment_execution: bool = True
+    human_review_required: bool = True
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class FinanceHardshipFinanceOfficeReferralQueueResponse(SssBaseResponse):
+    data_source: str = "computed_from_student_services_support_records"
+    incomplete_data: bool = False
+    items: list[FinanceHardshipFinanceOfficeReferralQueueItem] = Field(default_factory=list)
+
+
 class DashboardSummaryResponse(SssBaseResponse):
     data_source: str = "computed_from_student_services_support_records"
     incomplete_data: bool
@@ -253,5 +380,8 @@ class DashboardSummaryResponse(SssBaseResponse):
     open_support_cases: int
     escalated_cases: int
     hardship_readiness_counts: dict[str, int] = Field(default_factory=dict)
+    finance_hardship_handoff_visibility: FinanceHardshipHandoffDashboardVisibility = Field(
+        default_factory=FinanceHardshipHandoffDashboardVisibility
+    )
     accommodation_readiness_counts: dict[str, int] = Field(default_factory=dict)
     complaint_counts: dict[str, int] = Field(default_factory=dict)

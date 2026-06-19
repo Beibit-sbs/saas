@@ -4,9 +4,11 @@ import { ApiRequestError } from "@/shared/api/client";
 import type { PaginatedResponse } from "@/shared/api/types";
 import type {
   CourseSection,
+  CreateLessonInstancePayload,
   CreateSectionPayload,
   LessonAttendanceItem,
   LessonAttendanceListResponse,
+  LessonInstance,
   LessonInstanceListResponse,
   LessonAttendanceUpsertPayload,
   InterventionRiskSummary,
@@ -41,6 +43,9 @@ export const schedulingApi = {
 
   listSectionLessons: (sectionId: string, params?: { page?: number; page_size?: number; status?: string }) =>
     apiGet<LessonInstanceListResponse>(`${BASE}/${sectionId}/lessons`, params),
+
+  createSectionLesson: (sectionId: string, payload: CreateLessonInstancePayload) =>
+    apiPost<LessonInstance>(`${BASE}/${sectionId}/lessons`, payload),
 
   listLessonAttendance: (lessonInstanceId: string) =>
     apiGet<LessonAttendanceListResponse>(`${LESSONS_BASE}/${lessonInstanceId}/attendance`),

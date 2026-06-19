@@ -204,6 +204,13 @@ class CourseSectionReadSchema(BaseModel):
     version: int
 
 
+class CourseSectionListResponseSchema(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[CourseSectionReadSchema]
+
+
 class LessonInstanceReadSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

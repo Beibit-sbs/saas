@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import OrgUnitsPage from "../../app/(admin)/console/org-units/page";
 
 const useOrgUnitsMock = vi.fn();
+const useOrgUnitsTreeMock = vi.fn();
 let allowAccess = true;
 
 vi.mock("../../modules/org-units/hooks", () => ({
   useOrgUnits: (...args: unknown[]) => useOrgUnitsMock(...args),
-  useOrgUnitsTree: () => ({ data: [], isLoading: false }),
+  useOrgUnitsTree: (...args: unknown[]) => useOrgUnitsTreeMock(...args),
   useCreateOrgUnit: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateOrgUnit: () => ({ mutate: vi.fn(), isPending: false }),
   useDeactivateOrgUnit: () => ({ mutate: vi.fn(), isPending: false }),
@@ -74,6 +75,35 @@ const UNITS = [
   },
 ];
 
+const TREE = [
+  {
+    id: 10,
+    name: "Root Flow University",
+    code: "ROOT",
+    unit_type: "university",
+    active: true,
+    children: [
+      {
+        id: 11,
+        name: "Faculty of Engineering",
+        code: "ENG",
+        unit_type: "faculty",
+        active: true,
+        children: [
+          {
+            id: 12,
+            name: "Computer Science Department",
+            code: "CS",
+            unit_type: "department",
+            active: true,
+            children: [],
+          },
+        ],
+      },
+    ],
+  },
+];
+
 describe("OrgUnitsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -84,14 +114,28 @@ describe("OrgUnitsPage", () => {
       error: null,
       refetch: vi.fn(),
     });
+    useOrgUnitsTreeMock.mockReturnValue({
+      data: TREE,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
   });
 
   it("renders org units table", () => {
     render(<OrgUnitsPage />);
 
     expect(screen.getByTestId("org-units-page")).toBeInTheDocument();
-    expect(screen.getByText("Faculty of Engineering")).toBeInTheDocument();
+    expect(screen.getAllByText("Faculty of Engineering").length).toBeGreaterThan(0);
     expect(screen.getByText("ENG")).toBeInTheDocument();
+  });
+
+  it("renders the tenant organization tree", () => {
+    render(<OrgUnitsPage />);
+
+    expect(screen.getByTestId("org-units-tree-section")).toBeInTheDocument();
+    expect(screen.getByText("Root Flow University")).toBeInTheDocument();
+    expect(screen.getByText("Computer Science Department")).toBeInTheDocument();
   });
 
   it("shows empty state when no units", () => {
@@ -112,6 +156,16 @@ describe("OrgUnitsPage", () => {
       screen.getByRole("button", { name: /add unit/i }),
     ).toBeInTheDocument();
   });
+
+  it("uses existing units as parent choices when creating a unit", () => {
+    render(<OrgUnitsPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /add unit/i }));
+
+    expect(screen.getByLabelText("Parent unit ID")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Faculty of Engineering/ })).toBeInTheDocument();
+  });
+
   it("shows access denied when read permission is missing", () => {
     allowAccess = false;
     render(<OrgUnitsPage />);

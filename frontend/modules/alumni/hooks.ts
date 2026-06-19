@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch, apiPost } from "@/shared/api/client";
 import type {
+  AlumniBrainContext,
   AlumniRecordCreatePayload,
   AlumniRecordItemResponse,
   AlumniRecordListResponse,
@@ -26,12 +27,21 @@ export function useAlumniRecords(status?: AlumniStatus, studentId?: number) {
   });
 }
 
+export function useAlumniBrainContext() {
+  return useQuery({
+    queryKey: [ALUMNI_KEY, "brain-context"],
+    queryFn: () => apiGet<AlumniBrainContext>(`${BASE}/brain-context`),
+  });
+}
+
 export function useCreateAlumniRecord() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: AlumniRecordCreatePayload) =>
       apiPost<AlumniRecordItemResponse>(BASE, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ALUMNI_KEY] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: [ALUMNI_KEY] });
+    },
   });
 }
 
@@ -45,6 +55,8 @@ export function useUpdateAlumniStatus() {
       recordId: number;
       payload: AlumniStatusUpdatePayload;
     }) => apiPatch<AlumniRecordItemResponse>(`${BASE}/${recordId}/status`, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ALUMNI_KEY] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: [ALUMNI_KEY] });
+    },
   });
 }

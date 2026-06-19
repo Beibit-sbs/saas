@@ -148,6 +148,7 @@ export const PERMISSIONS = {
 
   // Degree progress
   DEGREE_PROGRESS_READ: "degree_progress.read",
+  DEGREE_PROGRESS_WRITE: "degree_progress.write",
 
   // Admissions
   ADMISSIONS_READ: "admissions.read",

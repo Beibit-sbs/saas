@@ -155,6 +155,7 @@ from app.modules.student_success_runtime.student_success_signals_runtime_router 
 from app.modules.student_success_runtime.student_success_dashboard_runtime_router import router as student_success_dashboard_runtime_router
 from app.modules.research_science.router import router as research_science_router
 from app.modules.research_science.runtime_shell_router import router as research_brain_runtime_shell_router
+from app.modules.innovation_commercialization.router import router as innovation_commercialization_router
 from app.modules.executive_governance.runtime_shell_router import router as executive_governance_runtime_shell_router
 from app.modules.reporting_runtime.runtime_shell_router import router as reporting_runtime_shell_router
 from app.modules.quality_accreditation.accreditation_evidence_router import router as quality_accreditation_accreditation_evidence_router
@@ -551,6 +552,7 @@ app.include_router(student_success_signals_runtime_router)
 app.include_router(student_success_dashboard_runtime_router)
 app.include_router(research_science_router)
 app.include_router(research_brain_runtime_shell_router)
+app.include_router(innovation_commercialization_router)
 app.include_router(executive_governance_runtime_shell_router)
 app.include_router(reporting_runtime_shell_router)
 app.include_router(quality_accreditation_runtime_shell_router)

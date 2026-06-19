@@ -26,6 +26,9 @@ from app.modules.grades.schemas import (
     GradeListResponseSchema,
     GradeMutationResponse,
     GradeSubmitSchema,
+    GradingScaleCreateSchema,
+    GradingScaleListResponseSchema,
+    GradingScaleReadSchema,
 )
 from app.modules.grades.service import GradeLifecycleService
 from app.modules.observability.metrics import observe_grade_submission
@@ -62,6 +65,116 @@ def _raise_grades_http_error(exc: Exception) -> HTTPException:
 
 
 router = APIRouter(prefix="/api/admin", tags=["grades"])
+
+
+@router.get(
+    "/grades",
+    summary="List tenant grades",
+    description="Returns paginated tenant grade submissions with optional enrollment graph filters.",
+    response_model=GradeListResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def list_tenant_grades_endpoint(
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("grades.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: GradesDb = None,
+    student_profile_id: int | None = Query(None, gt=0),
+    course_id: int | None = Query(None, gt=0),
+    term_id: int | None = Query(None, gt=0),
+    section_id: int | None = Query(None, gt=0),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+) -> GradeListResponseSchema:
+    service = GradeLifecycleService(db)
+    try:
+        return await service.list_tenant_grades(
+            tenant_id=int(tenant["id"]),
+            student_profile_id=student_profile_id,
+            course_id=course_id,
+            term_id=term_id,
+            section_id=section_id,
+            page=page,
+            page_size=page_size,
+            actor_id=actor,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_grades_http_error(exc) from exc
+
+
+@router.post(
+    "/grades/scales",
+    summary="Create grading scale",
+    description="Creates a tenant grading scale with grade code items.",
+    response_model=GradingScaleReadSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+        409: {"model": ErrorDetailResponse},
+    },
+)
+async def create_grading_scale_endpoint(
+    payload: dict[str, Any] = Body(...),
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("grades.write"))] = None,
+    tenant: TrustedTenant = None,
+    db: GradesDb = None,
+) -> GradingScaleReadSchema:
+    try:
+        request_model = _parse_payload(GradingScaleCreateSchema, payload)
+        service = GradeLifecycleService(db)
+        return await service.create_grading_scale(
+            tenant_id=int(tenant["id"]),
+            request=request_model,
+            actor_id=actor,
+        )
+    except (
+        PermissionError,
+        ValidationError,
+        ValueError,
+        IntegrityError,
+        TenantResourceNotFoundError,
+        DomainValidationError,
+    ) as exc:
+        raise _raise_grades_http_error(exc) from exc
+
+
+@router.get(
+    "/grades/scales",
+    summary="List grading scales",
+    description="Returns tenant grading scales with grade code items.",
+    response_model=GradingScaleListResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def list_grading_scales_endpoint(
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("grades.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: GradesDb = None,
+    active_only: bool = Query(True),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=200),
+) -> GradingScaleListResponseSchema:
+    service = GradeLifecycleService(db)
+    try:
+        return await service.list_grading_scales(
+            tenant_id=int(tenant["id"]),
+            active_only=active_only,
+            page=page,
+            page_size=page_size,
+            actor_id=actor,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_grades_http_error(exc) from exc
 
 
 @router.post(

@@ -105,6 +105,7 @@ _register_get("/bridges/executive", permissions.BRIDGES_EXECUTIVE_READ, service.
 _register_get("/bridges/hr-payroll", permissions.BRIDGES_HR_PAYROLL_READ, service.get_bridge_hr_payroll, schemas.FpaBridgeResponse)
 _register_get("/bridges/document-contracts", permissions.BRIDGES_DOCUMENT_CONTRACTS_READ, service.get_bridge_document_contracts, schemas.FpaBridgeResponse)
 _register_get("/bridges/provider-readiness", permissions.BRIDGES_PROVIDER_READINESS_READ, service.get_bridge_provider_readiness, schemas.FpaBridgeResponse)
+_register_get("/bridges/student-finance", permissions.BRIDGES_STUDENT_FINANCE_READ, service.get_bridge_student_finance, schemas.FpaBridgeResponse)
 _register_get("/health", permissions.OVERVIEW_READ, service.get_health, dict[str, Any])
 _register_get("/roles", permissions.METADATA_READ, service.get_roles, dict[str, Any])
 _register_get("/permissions", permissions.METADATA_READ, service.get_permissions, dict[str, Any])
@@ -112,6 +113,7 @@ _register_get("/metadata-contract", permissions.METADATA_READ, service.get_metad
 
 _register_post("/readiness/evidence", permissions.READINESS_READ, service.create_readiness_evidence, schemas.FpaMetadataCreateRequest)
 _register_post("/billing/evidence", permissions.BILLING_EVIDENCE, service.create_billing_evidence, schemas.FpaMetadataCreateRequest)
+_register_post("/receivables/metadata", permissions.RECEIVABLES_METADATA, service.create_receivables_metadata, schemas.FpaMetadataCreateRequest)
 _register_post("/budget-plans", permissions.BUDGET_PLANS_MANAGE, service.create_budget_plan, schemas.FpaMetadataCreateRequest)
 _register_post("/budget-controls/review", permissions.BUDGET_CONTROLS_REVIEW, service.review_budget_control, schemas.FpaReviewCreateRequest)
 _register_post("/procurement-requests", permissions.PROCUREMENT_REQUESTS_MANAGE, service.create_procurement_request, schemas.FpaMetadataCreateRequest)

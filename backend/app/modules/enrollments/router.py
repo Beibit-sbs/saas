@@ -23,6 +23,9 @@ from app.modules.audit.service import log_admin_action
 from app.modules.enrollments.dependencies import get_enrollments_db
 from app.modules.enrollments.models import EnrollmentStatus
 from app.modules.enrollments.schemas import (
+    AcademicTermCreateSchema,
+    AcademicTermListResponseSchema,
+    AcademicTermReadSchema,
     EnrollmentConsistencyReportSchema,
     EnrollmentCreateSchema,
     EnrollmentDropSchema,
@@ -95,6 +98,95 @@ def _log_router_call(
 
 
 router = APIRouter(prefix="/api/admin", tags=["enrollments"])
+
+
+@router.post(
+    "/academic-terms",
+    summary="Create academic term",
+    description="Creates a tenant-scoped academic term used by scheduling and enrollments.",
+    tags=["academic-terms"],
+    response_model=AcademicTermReadSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+        409: {"model": ErrorDetailResponse},
+    },
+)
+async def create_academic_term_endpoint(
+    payload: dict[str, Any] = Body(...),
+    request: Request = None,
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("enrollments.write"))] = None,
+    tenant: TrustedTenant = None,
+    db: EnrollmentsDb = None,
+) -> AcademicTermReadSchema:
+    try:
+        request_model = _parse_payload(AcademicTermCreateSchema, payload)
+        tenant_id = int(tenant["id"])
+        _log_router_call(
+            request,
+            endpoint="POST /api/admin/academic-terms",
+            actor_id=actor,
+            tenant_id=tenant_id,
+        )
+        service = EnrollmentLifecycleService(db)
+        return await service.create_academic_term(
+            tenant_id=tenant_id,
+            request=request_model,
+            actor_id=actor,
+        )
+    except (
+        PermissionError,
+        ValidationError,
+        ValueError,
+        IntegrityError,
+        TenantResourceNotFoundError,
+        DomainValidationError,
+        OptimisticLockConflictError,
+    ) as exc:
+        raise _raise_enrollments_http_error(exc) from exc
+
+
+@router.get(
+    "/academic-terms",
+    summary="List academic terms",
+    description="Returns tenant-scoped academic terms used by scheduling and enrollments.",
+    tags=["academic-terms"],
+    response_model=AcademicTermListResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def list_academic_terms_endpoint(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    status: str | None = Query(None, pattern="^(active|inactive|archived)$"),
+    request: Request = None,
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("enrollments.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: EnrollmentsDb = None,
+) -> AcademicTermListResponseSchema:
+    try:
+        tenant_id = int(tenant["id"])
+        _log_router_call(
+            request,
+            endpoint="GET /api/admin/academic-terms",
+            actor_id=actor,
+            tenant_id=tenant_id,
+        )
+        service = EnrollmentLifecycleService(db)
+        return await service.list_academic_terms(
+            tenant_id=tenant_id,
+            page=page,
+            page_size=page_size,
+            status=status,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_enrollments_http_error(exc) from exc
 
 
 @router.post(
@@ -213,6 +305,56 @@ async def get_enrollment_consistency_endpoint(
         service = EnrollmentLifecycleService(db)
         return await service.list_tenant_enrollment_consistency_report(
             tenant_id=tenant_id,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_enrollments_http_error(exc) from exc
+
+
+@router.get(
+    "/enrollments",
+    summary="List tenant enrollments",
+    description="Returns paginated tenant-scoped enrollments with optional student, course, term, section and status filters.",
+    tags=["enrollments"],
+    response_model=EnrollmentListResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def list_tenant_enrollments_endpoint(
+    request: Request = None,
+    actor: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("enrollments.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: EnrollmentsDb = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    status: EnrollmentStatus | None = None,
+    student_profile_id: int | None = Query(None, gt=0),
+    course_id: int | None = Query(None, gt=0),
+    term_id: int | None = Query(None, gt=0),
+    section_id: int | None = Query(None, gt=0),
+) -> EnrollmentListResponseSchema:
+    try:
+        tenant_id = int(tenant["id"])
+        _log_router_call(
+            request,
+            endpoint="GET /api/admin/enrollments",
+            actor_id=actor,
+            tenant_id=tenant_id,
+        )
+        service = EnrollmentLifecycleService(db)
+        return await service.list_tenant_enrollments(
+            tenant_id=tenant_id,
+            actor_id=actor,
+            page=page,
+            page_size=page_size,
+            status=status,
+            student_profile_id=student_profile_id,
+            course_id=course_id,
+            term_id=term_id,
+            section_id=section_id,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_enrollments_http_error(exc) from exc
@@ -454,5 +596,3 @@ async def drop_enrollment_endpoint(
 
 # Backward-compatible alias consumed by app bootstrap imports.
 legacy_router = router
-
-

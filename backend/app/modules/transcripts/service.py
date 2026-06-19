@@ -268,6 +268,7 @@ class TranscriptService:
     async def get_student_transcript(self, tenant_id: int, *, student_profile_id: int) -> StudentTranscriptSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
         self._load_student(tenant_id, student_profile_id)
+        enrollments = self._load_enrollments(tenant_id, student_profile_id)
 
         rows = self.db.execute(
             select(TranscriptRecordModel)
@@ -280,7 +281,21 @@ class TranscriptService:
             .order_by(TranscriptRecordModel.term_id, TranscriptRecordModel.course_id, TranscriptRecordModel.id)
         ).scalars().all()
 
-        if not rows:
+        consistency_report = self._build_transcript_consistency_report(
+            student_profile_id=student_profile_id,
+            enrollments=enrollments,
+            transcript_records=rows,
+        )
+        auto_healable_issue_types = {
+            "missing_transcript_record",
+            "transcript_record_mismatch",
+        }
+        has_auto_healable_issue = any(
+            issue.issue_type in auto_healable_issue_types
+            for issue in consistency_report.issues
+        )
+
+        if not rows or has_auto_healable_issue:
             transcript = await self.generate_transcript(
                 tenant_id,
                 student_profile_id=student_profile_id,

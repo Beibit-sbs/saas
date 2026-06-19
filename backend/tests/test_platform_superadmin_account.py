@@ -128,12 +128,20 @@ def test_no_implicit_platform_superadmin_autocreation_on_login() -> None:
     assert local_user_store.find_user_by_login("not.provisioned") is None
 
 
-def test_platform_superadmin_header_mismatch_does_not_change_tenant_context() -> None:
+def test_platform_superadmin_header_mismatch_allows_controlled_read_override() -> None:
     client.cookies.clear()
     ensure_platform_superadmin(
         login="platform.header.guard",
         password="PlatformOwnerPass123!",
     )
+
+    tenant_create = client.post(
+        "/api/admin/tenants",
+        headers=ADMIN_HEADERS,
+        json={"slug": "platform-header-tenant-b", "name": "Platform Header Tenant B", "status": "active"},
+    )
+    assert tenant_create.status_code == 200, tenant_create.text
+    tenant_b_id = int(tenant_create.json()["tenant"]["id"])
 
     login = client.post(
         "/api/auth/login",
@@ -142,13 +150,11 @@ def test_platform_superadmin_header_mismatch_does_not_change_tenant_context() ->
     )
     assert login.status_code == 200, login.text
 
-    forbidden = client.get(
+    allowed = client.get(
         "/api/admin/dashboard",
-        headers={"X-Tenant-ID": "2"},
+        headers={"X-Tenant-ID": str(tenant_b_id)},
     )
-    assert forbidden.status_code in {403, 404}
-    if forbidden.status_code == 403:
-        assert "cross-tenant override forbidden" in str(forbidden.json().get("detail", "")).lower()
+    assert allowed.status_code == 200, allowed.text
 
 
 def test_protected_endpoint_requires_token() -> None:

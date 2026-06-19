@@ -3,7 +3,71 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+
+class GradingScaleItemCreateSchema(BaseModel):
+    grade_code: str = Field(min_length=1, max_length=32)
+    grade_points: Decimal = Field(ge=0)
+    min_percentage: Decimal = Field(ge=0, le=100)
+    max_percentage: Decimal = Field(ge=0, le=100)
+
+    @field_validator("grade_code")
+    @classmethod
+    def normalize_grade_code(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if not normalized:
+            raise ValueError("grade_code must be provided")
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_percentage_range(self) -> "GradingScaleItemCreateSchema":
+        if self.min_percentage > self.max_percentage:
+            raise ValueError("min_percentage must be less than or equal to max_percentage")
+        return self
+
+
+class GradingScaleCreateSchema(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    description: str | None = Field(default=None, max_length=2000)
+    is_active: bool = True
+    items: list[GradingScaleItemCreateSchema] = Field(min_length=1)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("name must be provided")
+        return normalized
+
+
+class GradingScaleItemReadSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tenant_id: int
+    scale_id: int
+    grade_code: str
+    grade_points: Decimal
+    min_percentage: Decimal
+    max_percentage: Decimal
+
+
+class GradingScaleReadSchema(BaseModel):
+    id: int
+    tenant_id: int
+    name: str
+    description: str | None
+    is_active: bool
+    items: list[GradingScaleItemReadSchema]
+
+
+class GradingScaleListResponseSchema(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[GradingScaleReadSchema]
 
 
 class GradeSubmitSchema(BaseModel):

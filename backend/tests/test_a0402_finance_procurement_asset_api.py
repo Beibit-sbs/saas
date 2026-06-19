@@ -42,7 +42,7 @@ def _override_db():
 
 def test_router_surface_count() -> None:
     routes = [route for route in app.routes if getattr(route, "path", "").startswith(BASE)]
-    assert len(routes) == 53
+    assert len(routes) == 55
 
 
 @pytest.mark.parametrize("path", ["/overview", "/dashboard", "/billing", "/vendors", "/audit-events", "/metadata-contract"])
@@ -96,9 +96,9 @@ def test_dashboard_contract(mock_dashboard):
 def test_metadata_contract_endpoint() -> None:
     resp = client.get(f"{BASE}/metadata-contract", headers=ADMIN_HEADERS)
     assert resp.status_code == 200
-    assert resp.json()["route_count"] == 53
+    assert resp.json()["route_count"] == 55
     assert resp.json()["table_count"] == 24
-    assert resp.json()["permission_count"] == 48
+    assert resp.json()["permission_count"] == 50
 
 
 def test_safety_boundaries_endpoint() -> None:

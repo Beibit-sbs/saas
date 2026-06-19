@@ -180,6 +180,69 @@ class TestCreateTenant:
         assert data["tenant"]["id"] == 5
         assert "invite_token" in data
 
+    @patch("app.modules.platform.router.log_admin_action")
+    @patch("app.modules.platform.router.get_tenant_billing_state", return_value={"subscription": {"status": "trial"}, "billing_state": "read_write"})
+    @patch("app.modules.platform.router.sync_user_roles_from_trusted_source")
+    @patch("app.modules.platform.router.local_user_store")
+    @patch("app.modules.platform.router.TenantProvisioningService")
+    def test_success_with_tenant_admin_user(self, mock_tps, mock_users, mock_sync, mock_billing, mock_audit):
+        mock_tps.create_tenant_with_defaults.return_value = {
+            "tenant": {"id": 5, "name": "New U"},
+            "plan": {"code": "free"},
+        }
+        mock_users.find_user_by_login.return_value = None
+        mock_users.find_user_by_email.return_value = None
+        mock_users.create_user.return_value = {
+            "user_id": "local.tenant-admin",
+            "login": "new.admin",
+            "display_name": "New Tenant Admin",
+            "roles": ["admin"],
+            "tenant_id": 5,
+            "email": "admin@newu.edu",
+        }
+
+        resp = client.post(
+            f"{BASE}/tenants",
+            headers=ADMIN,
+            json={
+                "tenant_name": "New U",
+                "admin_email": "admin@newu.edu",
+                "admin_login": "new.admin",
+                "admin_password": "StrongPass123!",
+                "admin_display_name": "New Tenant Admin",
+                "plan_code": "free",
+            },
+        )
+
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["tenant"]["id"] == 5
+        assert data["admin_user"]["login"] == "new.admin"
+        assert "invite_token" not in data
+        mock_users.create_user.assert_called_once_with(
+            login="new.admin",
+            password="StrongPass123!",
+            display_name="New Tenant Admin",
+            roles=["admin"],
+            default_language="ru",
+            tenant_id=5,
+            email="admin@newu.edu",
+        )
+        mock_sync.assert_called_once_with("local.tenant-admin", ["admin"], tenant_id=5)
+
+    def test_admin_login_requires_admin_password(self):
+        resp = client.post(
+            f"{BASE}/tenants",
+            headers=ADMIN,
+            json={
+                "tenant_name": "Test U",
+                "admin_email": "admin@u.edu",
+                "admin_login": "tenant.admin",
+            },
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "admin_password is required"
+
     def test_missing_tenant_name(self):
         resp = client.post(
             f"{BASE}/tenants", headers=ADMIN,

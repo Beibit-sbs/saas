@@ -21,6 +21,8 @@ import type {
   ComplaintRecord,
   DashboardSummary,
   EscalationRecord,
+  FinanceHardshipFinanceOfficeReferralQueueItem,
+  FinanceHardshipReviewerQueueItem,
   ReadinessRecord,
   ServiceRequestRecord,
   StudentServicesSupportRouteDefinition,
@@ -45,6 +47,8 @@ interface StudentServicesSupportState {
   complaint?: ComplaintRecord | null;
   escalation?: EscalationRecord | null;
   dashboard?: DashboardSummary | null;
+  financeHardshipQueue?: FinanceHardshipReviewerQueueItem[];
+  financeOfficeReferralQueue?: FinanceHardshipFinanceOfficeReferralQueueItem[];
 }
 
 function slugify(value: string) {
@@ -76,6 +80,17 @@ function buildDefaultDashboard(): DashboardSummary {
     open_support_cases: 0,
     escalated_cases: 0,
     hardship_readiness_counts: {},
+    finance_hardship_handoff_visibility: {
+      source_module: 'finance_procurement_asset',
+      source_flow: 'student_finance_receivables_handoff',
+      total: 0,
+      review_queue_count: 0,
+      missing_evidence_count: 0,
+      readiness_counts: {},
+      no_automatic_aid_decision: true,
+      no_billing_balance_mutation: true,
+      human_review_required: true,
+    },
     accommodation_readiness_counts: {},
     complaint_counts: {},
   };
@@ -148,6 +163,45 @@ function buildDefaultState(routeKey: StudentServicesSupportRouteKey): StudentSer
     reason: 'Human escalation metadata reason.',
   };
 
+  const financeHardshipQueueSeed: FinanceHardshipReviewerQueueItem = {
+    hardship_id: 1,
+    request_id: 1,
+    student_id: 'S-1001',
+    support_priority: 'high',
+    hardship_status: 'readiness_evaluated',
+    service_request_status: 'submitted',
+    readiness_status: 'blocked_missing_required_evidence',
+    missing_evidence: ['balance_statement'],
+    recommended_next_step: 'collect_missing_evidence',
+    receivables_metadata_id: 7,
+    source_module: 'finance_procurement_asset',
+    source_flow: 'student_finance_receivables_handoff',
+    no_automatic_aid_decision: true,
+    no_billing_balance_mutation: true,
+    human_review_required: true,
+  };
+
+  const financeOfficeReferralQueueSeed: FinanceHardshipFinanceOfficeReferralQueueItem = {
+    hardship_id: 1,
+    request_id: 1,
+    student_id: 'S-1001',
+    support_priority: 'high',
+    hardship_status: 'finance_office_referral_recorded',
+    readiness_status: 'ready_for_human_review',
+    receivables_metadata_id: 7,
+    referral_target: 'student_finance_office',
+    referral_reason: 'manual_follow_up',
+    referral_priority: 'high',
+    note: 'finance_office_referral_metadata_only',
+    referred_by_user_id: 'reviewer-1',
+    source_module: 'student_services_support',
+    target_module: 'finance_procurement_asset',
+    no_automatic_aid_decision: true,
+    no_billing_balance_mutation: true,
+    no_payment_execution: true,
+    human_review_required: true,
+  };
+
   const base: StudentServicesSupportState = {
     loading: false,
     error: null,
@@ -163,6 +217,8 @@ function buildDefaultState(routeKey: StudentServicesSupportRouteKey): StudentSer
     complaint: complaintSeed,
     escalation: escalationSeed,
     dashboard: buildDefaultDashboard(),
+    financeHardshipQueue: [],
+    financeOfficeReferralQueue: [],
   };
 
   if (routeKey === 'dashboard') {
@@ -172,9 +228,22 @@ function buildDefaultState(routeKey: StudentServicesSupportRouteKey): StudentSer
       open_support_cases: 1,
       escalated_cases: 1,
       hardship_readiness_counts: { ready_for_human_review: 1 },
+      finance_hardship_handoff_visibility: {
+        source_module: 'finance_procurement_asset',
+        source_flow: 'student_finance_receivables_handoff',
+        total: 2,
+        review_queue_count: 1,
+        missing_evidence_count: 1,
+        readiness_counts: { ready_for_human_review: 1, blocked_missing_required_evidence: 1 },
+        no_automatic_aid_decision: true,
+        no_billing_balance_mutation: true,
+        human_review_required: true,
+      },
       accommodation_readiness_counts: { ready_for_human_review: 1 },
       complaint_counts: { routed: 1 },
     };
+    base.financeHardshipQueue = [financeHardshipQueueSeed];
+    base.financeOfficeReferralQueue = [financeOfficeReferralQueueSeed];
   }
 
   return base;
@@ -360,6 +429,35 @@ export function HardshipReadinessPanel({ record }: { record: ReadinessRecord | n
   return <ReadinessPanelBase testId="sss-hardship-panel" title="Hardship Readiness" record={record} />;
 }
 
+export function FinanceHardshipHandoffPanel() {
+  return (
+    <section className="rounded-xl border bg-card p-4" data-testid="sss-finance-hardship-handoff-panel">
+      <h3 className="text-base font-semibold">Finance hardship handoff</h3>
+      <p className="mt-2 text-sm text-muted-foreground">POST /api/admin/student-services/hardship/from-finance-handoff</p>
+      <div className="mt-3 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
+        <div className="rounded-lg border p-3">
+          <div className="font-medium text-foreground">Source metadata</div>
+          <ul className="mt-2 space-y-1 text-xs">
+            <li>student_id</li>
+            <li>receivables_metadata_id</li>
+            <li>evidence_refs</li>
+            <li>support_priority</li>
+          </ul>
+        </div>
+        <Link href="/console/finance-procurement-asset/student-finance" className="rounded-lg border p-3 hover:bg-muted/50">
+          <div className="font-medium text-foreground">Finance source</div>
+          <p className="mt-2 text-xs">Return to Student Finance Bridge and receivables metadata intake.</p>
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-3 text-xs text-muted-foreground md:grid-cols-3">
+        <div className="rounded-lg border p-3">noAutomaticAidDecision=true</div>
+        <div className="rounded-lg border p-3">noBillingBalanceMutation=true</div>
+        <div className="rounded-lg border p-3">humanReviewRequired=true</div>
+      </div>
+    </section>
+  );
+}
+
 export function AccommodationReadinessPanel({ record }: { record: ReadinessRecord | null }) {
   return <ReadinessPanelBase testId="sss-accommodation-panel" title="Accommodation Readiness" record={record} />;
 }
@@ -427,7 +525,169 @@ export function StudentSupportDashboardSummary({ summary }: { summary: Dashboard
           <p className="mt-2 text-2xl font-semibold">{data.escalated_cases}</p>
         </article>
       </div>
+      <article className="rounded-xl border bg-card p-4" data-testid="sss-dashboard-finance-hardship-visibility">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase text-muted-foreground">Finance hardship handoff visibility</p>
+            <h4 className="mt-1 text-lg font-semibold">{data.finance_hardship_handoff_visibility.total} finance-origin hardship requests</h4>
+          </div>
+          <Link href="/console/finance-procurement-asset/student-finance" className="rounded-lg border px-3 py-2 text-sm hover:bg-muted/50">
+            Student Finance Bridge
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-3 border-t pt-3 text-sm md:grid-cols-3">
+          <div>
+            <p className="text-xs uppercase text-muted-foreground">Human review queue</p>
+            <p className="mt-1 text-xl font-semibold">{data.finance_hardship_handoff_visibility.review_queue_count}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-muted-foreground">Missing evidence</p>
+            <p className="mt-1 text-xl font-semibold">{data.finance_hardship_handoff_visibility.missing_evidence_count}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-muted-foreground">Source flow</p>
+            <p className="mt-1 break-words text-xs text-muted-foreground">{data.finance_hardship_handoff_visibility.source_flow}</p>
+          </div>
+        </div>
+        <ul className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+          <li>noAutomaticAidDecision={String(data.finance_hardship_handoff_visibility.no_automatic_aid_decision)}</li>
+          <li>noBillingBalanceMutation={String(data.finance_hardship_handoff_visibility.no_billing_balance_mutation)}</li>
+          <li>humanReviewRequired={String(data.finance_hardship_handoff_visibility.human_review_required)}</li>
+        </ul>
+      </article>
       <p className="text-sm text-muted-foreground">No hidden student score. No discriminatory risk score.</p>
+    </section>
+  );
+}
+
+export function FinanceHardshipReviewerQueuePanel({ items }: { items: FinanceHardshipReviewerQueueItem[] }) {
+  return (
+    <section className="rounded-xl border bg-card p-4" data-testid="sss-finance-hardship-reviewer-queue">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold">Finance hardship reviewer queue</h3>
+          <p className="mt-1 text-sm text-muted-foreground">GET /api/admin/student-services/hardship/from-finance-handoff/reviewer-queue</p>
+        </div>
+        <Link href="/console/finance-procurement-asset/student-finance" className="rounded-lg border px-3 py-2 text-sm hover:bg-muted/50">
+          Finance source
+        </Link>
+      </div>
+      <div className="mt-4 space-y-3">
+        {items.length > 0 ? items.map((item) => (
+          <article key={item.hardship_id} className="border-t pt-3" data-testid="sss-finance-hardship-reviewer-queue-item">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">{item.student_id ?? 'Student unavailable'}</p>
+                <p className="text-xs text-muted-foreground">request_id={item.request_id ?? 'n/a'} receivables_metadata_id={item.receivables_metadata_id ?? 'n/a'}</p>
+              </div>
+              <span className="rounded-full border px-2 py-1 text-xs">{item.readiness_status}</span>
+            </div>
+            <dl className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+              <div>
+                <dt className="uppercase">Priority</dt>
+                <dd className="mt-1 text-foreground">{item.support_priority ?? 'n/a'}</dd>
+              </div>
+              <div>
+                <dt className="uppercase">Service request</dt>
+                <dd className="mt-1 text-foreground">{item.service_request_status ?? 'n/a'}</dd>
+              </div>
+              <div>
+                <dt className="uppercase">Missing evidence</dt>
+                <dd className="mt-1 text-foreground">{item.missing_evidence.length ? item.missing_evidence.join(', ') : 'none'}</dd>
+              </div>
+            </dl>
+            <div className="mt-3 border-t pt-3 text-xs text-muted-foreground" data-testid="sss-finance-hardship-evidence-gap-intake-shell">
+              <p className="font-medium text-foreground">Evidence gap intake metadata</p>
+              <p className="mt-1 break-words">{`POST /api/admin/student-services/hardship/from-finance-handoff/${item.hardship_id}/evidence-gap`}</p>
+              <ul className="mt-2 grid gap-1 md:grid-cols-2">
+                <li>satisfies_gap={item.missing_evidence[0] ?? 'selected_gap'}</li>
+                <li>evidence_type=document_metadata</li>
+                <li>evidence_ref=metadata_reference_only</li>
+                <li>source_available=false</li>
+              </ul>
+            </div>
+            <div className="mt-3 border-t pt-3 text-xs text-muted-foreground" data-testid="sss-finance-hardship-human-review-outcome-note-shell">
+              <p className="font-medium text-foreground">Human review outcome note metadata</p>
+              <p className="mt-1 break-words">{`POST /api/admin/student-services/hardship/from-finance-handoff/${item.hardship_id}/human-review-outcome-note`}</p>
+              <ul className="mt-2 grid gap-1 md:grid-cols-2">
+                <li>outcome_label=manual_review_recorded</li>
+                <li>reviewer_recommendation=non_executing_note</li>
+                <li>note=human_review_metadata_only</li>
+                <li>noAutomaticAidDecision=true</li>
+              </ul>
+            </div>
+            <div className="mt-3 border-t pt-3 text-xs text-muted-foreground" data-testid="sss-finance-hardship-finance-office-referral-shell">
+              <p className="font-medium text-foreground">Finance-office referral metadata</p>
+              <p className="mt-1 break-words">{`POST /api/admin/student-services/hardship/from-finance-handoff/${item.hardship_id}/finance-office-referral`}</p>
+              <ul className="mt-2 grid gap-1 md:grid-cols-2">
+                <li>referral_target=student_finance_office</li>
+                <li>referral_priority=high</li>
+                <li>referral_reason=manual_follow_up</li>
+                <li>noPaymentExecution=true</li>
+              </ul>
+            </div>
+          </article>
+        )) : (
+          <p className="border-t pt-3 text-sm text-muted-foreground">No finance-origin hardship records in reviewer queue.</p>
+        )}
+      </div>
+      <ul className="mt-4 grid gap-2 border-t pt-3 text-xs text-muted-foreground md:grid-cols-3">
+        <li>noAutomaticAidDecision=true</li>
+        <li>noBillingBalanceMutation=true</li>
+        <li>humanReviewRequired=true</li>
+      </ul>
+    </section>
+  );
+}
+
+export function FinanceHardshipFinanceOfficeReferralQueuePanel({ items }: { items: FinanceHardshipFinanceOfficeReferralQueueItem[] }) {
+  return (
+    <section className="rounded-xl border bg-card p-4" data-testid="sss-finance-hardship-finance-office-referral-queue">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold">Finance-office referral queue</h3>
+          <p className="mt-1 text-sm text-muted-foreground">GET /api/admin/student-services/hardship/from-finance-handoff/finance-office-referral-queue</p>
+        </div>
+        <Link href="/console/finance-procurement-asset/student-finance" className="rounded-lg border px-3 py-2 text-sm hover:bg-muted/50">
+          Finance office
+        </Link>
+      </div>
+      <div className="mt-4 space-y-3">
+        {items.length > 0 ? items.map((item) => (
+          <article key={item.hardship_id} className="border-t pt-3" data-testid="sss-finance-hardship-finance-office-referral-queue-item">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">{item.student_id ?? 'Student unavailable'}</p>
+                <p className="text-xs text-muted-foreground">hardship_id={item.hardship_id} request_id={item.request_id ?? 'n/a'} receivables_metadata_id={item.receivables_metadata_id ?? 'n/a'}</p>
+              </div>
+              <span className="rounded-full border px-2 py-1 text-xs">{item.hardship_status}</span>
+            </div>
+            <dl className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+              <div>
+                <dt className="uppercase">Referral target</dt>
+                <dd className="mt-1 text-foreground">{item.referral_target ?? 'n/a'}</dd>
+              </div>
+              <div>
+                <dt className="uppercase">Referral priority</dt>
+                <dd className="mt-1 text-foreground">{item.referral_priority ?? 'n/a'}</dd>
+              </div>
+              <div>
+                <dt className="uppercase">Referral reason</dt>
+                <dd className="mt-1 text-foreground">{item.referral_reason ?? 'n/a'}</dd>
+              </div>
+            </dl>
+            <p className="mt-2 text-xs text-muted-foreground">target_module={item.target_module} referred_by_user_id={item.referred_by_user_id ?? 'n/a'}</p>
+          </article>
+        )) : (
+          <p className="border-t pt-3 text-sm text-muted-foreground">No finance-office referral records in queue.</p>
+        )}
+      </div>
+      <ul className="mt-4 grid gap-2 border-t pt-3 text-xs text-muted-foreground md:grid-cols-2">
+        <li>noAutomaticAidDecision=true</li>
+        <li>noBillingBalanceMutation=true</li>
+        <li>noPaymentExecution=true</li>
+        <li>humanReviewRequired=true</li>
+      </ul>
     </section>
   );
 }
@@ -536,11 +796,22 @@ function RouteContent({ routeKey, state }: { routeKey: StudentServicesSupportRou
             evidence={state.evidence ?? []}
           />
         ) : null}
-        {routeKey === 'hardship' ? <HardshipReadinessPanel record={state.hardship ?? null} /> : null}
+        {routeKey === 'hardship' ? (
+          <>
+            <HardshipReadinessPanel record={state.hardship ?? null} />
+            <FinanceHardshipHandoffPanel />
+          </>
+        ) : null}
         {routeKey === 'accommodations' ? <AccommodationReadinessPanel record={state.accommodation ?? null} /> : null}
         {routeKey === 'complaints' ? <StudentComplaintRoutingPanel complaint={state.complaint ?? null} /> : null}
         {routeKey === 'escalations' ? <SupportEscalationPanel escalation={state.escalation ?? null} /> : null}
-        {routeKey === 'dashboard' ? <StudentSupportDashboardSummary summary={state.dashboard ?? null} /> : null}
+        {routeKey === 'dashboard' ? (
+          <>
+            <StudentSupportDashboardSummary summary={state.dashboard ?? null} />
+            <FinanceHardshipReviewerQueuePanel items={state.financeHardshipQueue ?? []} />
+            <FinanceHardshipFinanceOfficeReferralQueuePanel items={state.financeOfficeReferralQueue ?? []} />
+          </>
+        ) : null}
 
         <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground" data-testid="sss-route-contract-panel">
           <p>Route: {route.path}</p>

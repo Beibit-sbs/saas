@@ -108,8 +108,122 @@ export interface DashboardSummary extends StudentServicesModuleBase {
   open_support_cases: number;
   escalated_cases: number;
   hardship_readiness_counts: Record<string, number>;
+  finance_hardship_handoff_visibility: {
+    source_module: 'finance_procurement_asset';
+    source_flow: 'student_finance_receivables_handoff';
+    total: number;
+    review_queue_count: number;
+    missing_evidence_count: number;
+    readiness_counts: Record<string, number>;
+    no_automatic_aid_decision: true;
+    no_billing_balance_mutation: true;
+    human_review_required: true;
+  };
   accommodation_readiness_counts: Record<string, number>;
   complaint_counts: Record<string, number>;
+}
+
+export interface FinanceHardshipReviewerQueueItem {
+  hardship_id: number;
+  request_id?: number | null;
+  student_id?: string | null;
+  support_priority?: string | null;
+  hardship_status: string;
+  service_request_status?: string | null;
+  readiness_status: string;
+  missing_evidence: string[];
+  recommended_next_step?: string | null;
+  receivables_metadata_id?: number | null;
+  source_module: 'finance_procurement_asset';
+  source_flow: 'student_finance_receivables_handoff';
+  no_automatic_aid_decision: true;
+  no_billing_balance_mutation: true;
+  human_review_required: true;
+}
+
+export interface FinanceHardshipReviewerQueueResponse extends StudentServicesModuleBase {
+  data_source: string;
+  incomplete_data: boolean;
+  items: FinanceHardshipReviewerQueueItem[];
+}
+
+export interface FinanceHardshipEvidenceGapIntakePayload {
+  evidence_type: string;
+  evidence_ref?: string | null;
+  satisfies_gap: string;
+  source_available?: boolean;
+  limitations?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FinanceHardshipEvidenceGapIntakeResponse extends StudentServicesModuleBase {
+  item: ReadinessRecord;
+  evidence_metadata: Record<string, unknown>;
+  satisfied_gap: string;
+  remaining_missing_evidence: string[];
+  no_automatic_aid_decision: true;
+  no_billing_balance_mutation: true;
+}
+
+export interface FinanceHardshipHumanReviewOutcomeNotePayload {
+  outcome_label: string;
+  reviewer_recommendation?: string | null;
+  note: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FinanceHardshipHumanReviewOutcomeNoteResponse extends StudentServicesModuleBase {
+  item: ReadinessRecord;
+  outcome_note_metadata: Record<string, unknown>;
+  outcome_label: string;
+  reviewer_recommendation?: string | null;
+  no_automatic_aid_decision: true;
+  no_billing_balance_mutation: true;
+}
+
+export interface FinanceHardshipFinanceOfficeReferralPayload {
+  referral_target: string;
+  referral_reason: string;
+  referral_priority?: SupportPriority;
+  note?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FinanceHardshipFinanceOfficeReferralResponse extends StudentServicesModuleBase {
+  item: ReadinessRecord;
+  referral_metadata: Record<string, unknown>;
+  referral_target: string;
+  referral_priority: SupportPriority;
+  no_automatic_aid_decision: true;
+  no_billing_balance_mutation: true;
+  no_payment_execution: true;
+}
+
+export interface FinanceHardshipFinanceOfficeReferralQueueItem {
+  hardship_id: number;
+  request_id?: number | null;
+  student_id?: string | null;
+  support_priority?: string | null;
+  hardship_status: string;
+  readiness_status: string;
+  receivables_metadata_id?: number | null;
+  referral_target?: string | null;
+  referral_reason?: string | null;
+  referral_priority?: string | null;
+  note?: string | null;
+  referred_by_user_id?: string | null;
+  source_module: 'student_services_support';
+  target_module: 'finance_procurement_asset';
+  no_automatic_aid_decision: true;
+  no_billing_balance_mutation: true;
+  no_payment_execution: true;
+  human_review_required: true;
+}
+
+export interface FinanceHardshipFinanceOfficeReferralQueueResponse extends StudentServicesModuleBase {
+  data_source: string;
+  incomplete_data: boolean;
+  items: FinanceHardshipFinanceOfficeReferralQueueItem[];
 }
 
 export interface ServiceRequestListResponse extends StudentServicesModuleBase {
@@ -190,6 +304,14 @@ export interface SupportEvidenceCreatePayload {
 export interface HardshipCreatePayload {
   request_id?: number | null;
   evidence_refs?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface FinanceHardshipHandoffCreatePayload {
+  student_id: string;
+  receivables_metadata_id?: number | null;
+  evidence_refs?: string[];
+  support_priority?: SupportPriority;
   metadata?: Record<string, unknown>;
 }
 

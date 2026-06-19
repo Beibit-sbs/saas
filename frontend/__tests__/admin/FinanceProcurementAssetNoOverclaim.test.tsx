@@ -32,8 +32,8 @@ describe('Finance Procurement Asset no-overclaim boundaries', () => {
     expect(screen.getByText('No production/sales/GCC/L5/L6 claim.')).toBeInTheDocument();
   });
 
-  it('keeps the route inventory fixed at 22 routes', () => {
-    expect(FINANCE_PROCUREMENT_ASSET_ROUTES).toHaveLength(22);
+  it('keeps the route inventory fixed at 23 routes', () => {
+    expect(FINANCE_PROCUREMENT_ASSET_ROUTES).toHaveLength(23);
   });
 
   it('does not expose forbidden API helpers', () => {

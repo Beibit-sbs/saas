@@ -51,6 +51,7 @@ _CANONICAL_PLATFORM_ADMIN_PERMISSIONS: Set[str] = {
     "scheduling.read",
     "scheduling.write",
     "degree_progress.read",
+    "degree_progress.write",
     "advising.read",
     "advising.write",
     "student_services.read",
@@ -385,6 +386,7 @@ _FINANCE_PROCUREMENT_ASSET_PERMISSIONS: Set[str] = {
     "finance_procurement_asset.billing.read",
     "finance_procurement_asset.billing.evidence",
     "finance_procurement_asset.receivables.read",
+    "finance_procurement_asset.receivables.metadata",
     "finance_procurement_asset.budget_plans.read",
     "finance_procurement_asset.budget_plans.manage",
     "finance_procurement_asset.budget_controls.read",
@@ -425,6 +427,7 @@ _FINANCE_PROCUREMENT_ASSET_PERMISSIONS: Set[str] = {
     "finance_procurement_asset.bridges.hr_payroll.read",
     "finance_procurement_asset.bridges.document_contracts.read",
     "finance_procurement_asset.bridges.provider_readiness.read",
+    "finance_procurement_asset.bridges.student_finance.read",
     "finance_procurement_asset.metadata.read",
 }
 
@@ -435,6 +438,7 @@ _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS: Set[str] = {
     "finance_procurement_asset.dashboard.read",
     "finance_procurement_asset.billing.read",
     "finance_procurement_asset.receivables.read",
+    "finance_procurement_asset.receivables.metadata",
     "finance_procurement_asset.budget_plans.read",
     "finance_procurement_asset.budget_controls.read",
     "finance_procurement_asset.procurement_requests.read",
@@ -457,6 +461,7 @@ _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS: Set[str] = {
     "finance_procurement_asset.bridges.hr_payroll.read",
     "finance_procurement_asset.bridges.document_contracts.read",
     "finance_procurement_asset.bridges.provider_readiness.read",
+    "finance_procurement_asset.bridges.student_finance.read",
     "finance_procurement_asset.metadata.read",
 }
 
