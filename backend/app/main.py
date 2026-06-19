@@ -33,6 +33,7 @@ from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
 from app.modules.academic_records.router import router as academic_records_router
 from app.modules.admissions.router import router as admissions_router
+from app.modules.admissions_crm.router import router as admissions_crm_router
 from app.modules.ai_gateway.router import router as ai_gateway_router
 from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
 from app.modules.audit.router import router as audit_router
@@ -427,6 +428,7 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_local_users_router)
 app.include_router(admissions_router)
+app.include_router(admissions_crm_router)
 app.include_router(ai_gateway_router)
 app.include_router(ai_gateway_public_router)
 app.include_router(brain_core_router)
