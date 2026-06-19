@@ -73,11 +73,39 @@ def get_safety_boundaries(tenant_id: Any) -> schemas.DigitalTwinSafetyResponse:
     )
 
 
+def _live_enrollment_count(tenant_id: int) -> int | None:
+    """Best-effort tenant-scoped enrollment count from the enrollments module.
+
+    Returns None on any failure so the caller can fall back honestly (no fabrication).
+    """
+    try:
+        from app.modules.enrollments import service as enrollments_service
+
+        rows = enrollments_service.list_enrollments(tenant_id)
+        return len(rows) if isinstance(rows, list) else None
+    except Exception:
+        return None
+
+
 def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) -> schemas.CapacityWhatIfResponse:
-    """Deterministic capacity what-if. No fabricated values; missing inputs -> incomplete_data."""
+    """Deterministic capacity what-if. No fabricated values; missing inputs -> incomplete_data.
+
+    A-056.4: when use_live_sources is set, current_students is read live from the
+    enrollments module (best-effort); on failure it falls back to the caller value.
+    """
     tid = _validate_tenant(tenant_id)
 
-    projected = round(request.current_students * (1 + request.intake_growth_percent / 100))
+    current_students = request.current_students
+    students_mode = "caller_provided"
+    live_sources_used: list[str] = []
+    if request.use_live_sources:
+        live = _live_enrollment_count(tid)
+        if live is not None:
+            current_students = live
+            students_mode = "live"
+            live_sources_used.append("enrollments")
+
+    projected = round(current_students * (1 + request.intake_growth_percent / 100))
     incomplete = False
 
     classroom_util: float | None = None
@@ -100,9 +128,9 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
         risks.append("dormitory_capacity_exceeded")
 
     evidence = [
-        schemas.CapacityWhatIfEvidence(field="current_students", value=float(request.current_students), source_module="enrollments"),
-        schemas.CapacityWhatIfEvidence(field="classroom_capacity", value=float(request.classroom_capacity), source_module="scheduling"),
-        schemas.CapacityWhatIfEvidence(field="dormitory_capacity", value=float(request.dormitory_capacity), source_module="dormitory_management"),
+        schemas.CapacityWhatIfEvidence(field="current_students", value=float(current_students), source_module="enrollments", mode=students_mode),
+        schemas.CapacityWhatIfEvidence(field="classroom_capacity", value=float(request.classroom_capacity), source_module="scheduling", mode="caller_provided"),
+        schemas.CapacityWhatIfEvidence(field="dormitory_capacity", value=float(request.dormitory_capacity), source_module="dormitory_management", mode="caller_provided"),
     ]
 
     return schemas.CapacityWhatIfResponse(
@@ -112,5 +140,6 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
         dormitory_pressure=dorm_pressure,
         risks=risks,
         evidence=evidence,
+        live_sources_used=live_sources_used,
         incomplete_data=incomplete,
     )

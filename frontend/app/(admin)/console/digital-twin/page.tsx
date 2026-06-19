@@ -140,6 +140,7 @@ export default function DigitalTwinPage() {
           <li>fake_metrics=false</li>
           <li>incomplete_data reported, never guessed</li>
           <li>no autonomous action</li>
+          <li>use_live_sources reads current_students from enrollments (best-effort, falls back honestly)</li>
         </ul>
       </section>
     </div>

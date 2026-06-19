@@ -60,12 +60,15 @@ class CapacityWhatIfRequest(BaseModel):
     classroom_capacity: int = Field(default=0, ge=0)
     dormitory_capacity: int = Field(default=0, ge=0)
     housing_demand_ratio: float = Field(default=0.0, ge=0, le=1)
+    # A-056.4: best-effort live read of current_students from the enrollments module.
+    use_live_sources: bool = False
 
 
 class CapacityWhatIfEvidence(BaseModel):
     field: str
     value: float
     source_module: str
+    mode: str = "caller_provided"  # "live" when read from a source, else "caller_provided"
 
 
 class CapacityWhatIfResponse(BaseModel):
@@ -78,6 +81,7 @@ class CapacityWhatIfResponse(BaseModel):
     dormitory_pressure: float | None = None
     risks: list[str] = Field(default_factory=list)
     evidence: list[CapacityWhatIfEvidence] = Field(default_factory=list)
+    live_sources_used: list[str] = Field(default_factory=list)
     incomplete_data: bool = False
     human_review_required: bool = True
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)

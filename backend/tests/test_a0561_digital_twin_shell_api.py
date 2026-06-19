@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from app.core.tenant import get_current_tenant
@@ -129,3 +131,36 @@ def test_capacity_simulation_marks_incomplete_when_capacity_unknown() -> None:
     assert body["classroom_utilization"] is None
     assert body["incomplete_data"] is True
     assert body["risks"] == []
+
+
+@patch("app.modules.digital_twin.service._live_enrollment_count", return_value=2000)
+def test_capacity_simulation_uses_live_enrollments_when_requested(mock_count) -> None:
+    resp = client.post(
+        f"{BASE}/simulate/capacity",
+        headers=ADMIN_HEADERS,
+        json={"current_students": 10, "intake_growth_percent": 20, "use_live_sources": True},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # live count (2000) overrides the caller value (10): projected = 2000 * 1.2
+    assert body["projected_students"] == 2400
+    assert body["live_sources_used"] == ["enrollments"]
+    students = next(e for e in body["evidence"] if e["field"] == "current_students")
+    assert students["mode"] == "live"
+    assert students["value"] == 2000
+
+
+@patch("app.modules.digital_twin.service._live_enrollment_count", return_value=None)
+def test_capacity_simulation_falls_back_when_live_read_fails(mock_count) -> None:
+    resp = client.post(
+        f"{BASE}/simulate/capacity",
+        headers=ADMIN_HEADERS,
+        json={"current_students": 800, "intake_growth_percent": 0, "use_live_sources": True},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # honest fallback to caller-provided; no fabrication
+    assert body["projected_students"] == 800
+    assert body["live_sources_used"] == []
+    students = next(e for e in body["evidence"] if e["field"] == "current_students")
+    assert students["mode"] == "caller_provided"
