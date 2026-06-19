@@ -416,3 +416,29 @@ def test_finance_hardship_finance_office_referral_queue_is_visibility_only() -> 
     assert item.no_billing_balance_mutation is True
     assert item.no_payment_execution is True
     assert list_queue.call_args.args[2] == "student_finance_receivables_handoff"
+
+
+def test_finance_hardship_human_review_note_fails_closed_for_other_tenant_hardship() -> None:
+    # A-056.G1.3 tenant fail-closed: repository.get_hardship_request is tenant-scoped, so a
+    # hardship_id that does not belong to the caller's tenant returns None and the write is
+    # rejected ("not found in tenant scope") before any mutation — no cross-tenant write.
+    db = _db()
+    request = service.schemas.FinanceHardshipHumanReviewOutcomeNoteRequest(
+        outcome_label="reviewed_supportive",
+        note="human reviewer note",
+    )
+    with (
+        patch(
+            "app.modules.student_services_support.service.repository.get_hardship_request",
+            return_value=None,
+        ) as get_hs,
+        patch(
+            "app.modules.student_services_support.service.repository.update_hardship_request",
+        ) as update_hs,
+    ):
+        with pytest.raises(service.DomainValidationError, match="not found in tenant scope"):
+            service.record_finance_hardship_human_review_outcome_note(
+                db, 1, "officer@example.com", 4242, request
+            )
+    get_hs.assert_called_once()
+    update_hs.assert_not_called()

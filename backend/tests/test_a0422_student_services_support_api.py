@@ -2,13 +2,38 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+from unittest.mock import MagicMock
+
+from sqlalchemy.orm import Session
 
 from app.main import app
+from app.modules.student_services_support.dependencies import get_student_services_support_db
+from tests.conftest import _auth_headers, client
 
 
 BASE = "/api/admin/student-services"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 MIGRATION_FILE = BACKEND_DIR / "alembic" / "versions" / "sss0422rt01_a0422_student_services_support_tables.py"
+
+# A-056.G1.3: viewer lacks admin.student_services.write — used for RBAC-denial coverage.
+VIEWER_HEADERS = _auth_headers("viewer-sss@example.com", ["viewer"], tenant_id=1)
+
+
+def test_hardship_write_denied_for_viewer() -> None:
+    # A-056.G1.3 RBAC denial: a viewer (no admin.student_services.write) is rejected by
+    # permission_dependency before the hardship write service runs. Closes the gate gap
+    # (the SSS api suite was previously structure/route-inventory only).
+    session = MagicMock(spec=Session)
+    app.dependency_overrides[get_student_services_support_db] = lambda: session
+    try:
+        resp = client.post(
+            f"{BASE}/hardship",
+            headers=VIEWER_HEADERS,
+            json={"evidence_refs": [], "metadata": {}},
+        )
+        assert resp.status_code == 403, resp.text
+    finally:
+        app.dependency_overrides.pop(get_student_services_support_db, None)
 
 
 def test_route_inventory_exact_21() -> None:

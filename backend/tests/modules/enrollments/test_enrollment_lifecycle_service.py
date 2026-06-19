@@ -532,3 +532,28 @@ class TestStatusLifecycle:
                     actor_id="registrar@example.com",
                 )
             )
+
+    def test_out_of_order_non_terminal_transition_rejected(
+        self, run_async, db_session, enrollment_factory
+    ) -> None:
+        # A-056.G1.3: distinct from the terminal-mutation case — the SOURCE state is
+        # active/non-terminal (ENROLLED) but the target is not in its allowed set
+        # (ENROLLED -> {COMPLETED, DROPPED, WITHDRAWN, SUSPENDED}; WAITLIST is forbidden).
+        # Proves out-of-order rejection, not just "can't leave a terminal state".
+        service = EnrollmentLifecycleService(db_session)
+        enrollment = enrollment_factory(enrollment_status=EnrollmentStatus.ENROLLED, version=2)
+        db_session.execute.return_value = ExecuteResult(scalar_one_or_none=enrollment)
+
+        with pytest.raises(DomainValidationError, match="not allowed"):
+            run_async(
+                service.change_enrollment_status(
+                    tenant_id=1,
+                    enrollment_id=enrollment.id,
+                    request=EnrollmentStatusChangeSchema(
+                        expected_version=2,
+                        to_status=EnrollmentStatus.WAITLIST,
+                    ),
+                    actor_id="registrar@example.com",
+                )
+            )
+        db_session.commit.assert_not_called()
