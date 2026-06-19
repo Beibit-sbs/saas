@@ -159,6 +159,22 @@ export default function DigitalTwinPage() {
           <li>recommends action, executes nothing</li>
         </ul>
       </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-scenarios">
+        <h2 className="text-base font-semibold">What-if scenario registry (executive review)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">POST /api/admin/digital-twin/scenarios/capacity</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Runs named intake-growth scenarios side by side for executive comparison — default
+          baseline / +10% / +20% / +30% — each with its capacity projection and early warnings.
+          Read-only; the twin lays out the options, humans choose.
+        </p>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>baseline</li>
+          <li>intake_plus_10pct</li>
+          <li>intake_plus_20pct</li>
+          <li>intake_plus_30pct</li>
+        </ul>
+      </section>
     </div>
   );
 }

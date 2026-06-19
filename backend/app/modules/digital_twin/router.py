@@ -58,3 +58,14 @@ def digital_twin_capacity_early_warning(
 ) -> schemas.CapacityEarlyWarningResponse:
     # Read-only warning readout; recommends human action, executes nothing.
     return service.capacity_early_warning(_tenant_id(tenant), payload)
+
+
+@router.post("/scenarios/capacity", response_model=schemas.CapacityScenarioRegistryResponse)
+def digital_twin_capacity_scenarios(
+    payload: schemas.CapacityScenarioRequest,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.SIMULATE_RUN))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.CapacityScenarioRegistryResponse:
+    # Read-only named-scenario comparison for executive review; executes nothing.
+    return service.run_capacity_scenarios(_tenant_id(tenant), payload)

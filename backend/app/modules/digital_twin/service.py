@@ -196,3 +196,32 @@ def capacity_early_warning(tenant_id: Any, request: schemas.CapacityWhatIfReques
         candidate_signal_sources=list(SOURCE_SIGNAL_REGISTRIES),
         incomplete_data=projection.incomplete_data,
     )
+
+
+def run_capacity_scenarios(tenant_id: Any, request: schemas.CapacityScenarioRequest) -> schemas.CapacityScenarioRegistryResponse:
+    """Run several named intake-growth scenarios for executive review (read-only)."""
+    tid = _validate_tenant(tenant_id)
+    items: list[schemas.CapacityScenarioItem] = []
+    incomplete = False
+    for growth in request.intake_growth_scenarios:
+        whatif = schemas.CapacityWhatIfRequest(
+            current_students=request.current_students,
+            intake_growth_percent=growth,
+            classroom_capacity=request.classroom_capacity,
+            dormitory_capacity=request.dormitory_capacity,
+            housing_demand_ratio=request.housing_demand_ratio,
+            use_live_sources=request.use_live_sources,
+        )
+        warning = capacity_early_warning(tid, whatif)
+        name = "baseline" if growth == 0 else f"intake_plus_{int(growth)}pct"
+        items.append(
+            schemas.CapacityScenarioItem(
+                name=name,
+                intake_growth_percent=growth,
+                projection=warning.projection,
+                warnings=warning.warnings,
+            )
+        )
+        if warning.projection.incomplete_data:
+            incomplete = True
+    return schemas.CapacityScenarioRegistryResponse(tenant_id=tid, scenarios=items, incomplete_data=incomplete)

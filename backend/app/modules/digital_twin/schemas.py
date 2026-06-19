@@ -108,3 +108,31 @@ class CapacityEarlyWarningResponse(BaseModel):
     incomplete_data: bool = False
     human_review_required: bool = True
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+class CapacityScenarioRequest(BaseModel):
+    """Run several named intake-growth scenarios at once for executive review."""
+
+    current_students: int = Field(ge=0)
+    classroom_capacity: int = Field(default=0, ge=0)
+    dormitory_capacity: int = Field(default=0, ge=0)
+    housing_demand_ratio: float = Field(default=0.0, ge=0, le=1)
+    use_live_sources: bool = False
+    intake_growth_scenarios: list[float] = Field(default_factory=lambda: [0.0, 10.0, 20.0, 30.0])
+
+
+class CapacityScenarioItem(BaseModel):
+    name: str
+    intake_growth_percent: float
+    projection: CapacityWhatIfResponse
+    warnings: list[EarlyWarningItem] = Field(default_factory=list)
+
+
+class CapacityScenarioRegistryResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    runtime_mode: str = "METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY"
+    scenarios: list[CapacityScenarioItem] = Field(default_factory=list)
+    incomplete_data: bool = False
+    human_review_required: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)

@@ -31,7 +31,7 @@ ADMIN_HEADERS = _admin_headers()
 
 def test_route_surface_count() -> None:
     routes = [r for r in app.routes if getattr(r, "path", "").startswith(BASE)]
-    assert len(routes) == 4
+    assert len(routes) == 5
 
 
 @pytest.mark.parametrize("path", ["/state", "/safety-boundaries"])
@@ -214,3 +214,31 @@ def test_early_warning_silent_when_within_capacity() -> None:
     body = resp.json()
     # util 1000/2000 = 0.5 -> no warning
     assert all(w["signal"] != "classroom_capacity_risk" for w in body["warnings"])
+
+
+def test_capacity_scenarios_requires_auth_and_denies_viewer() -> None:
+    assert client.post(f"{BASE}/scenarios/capacity", json={"current_students": 1}).status_code in (401, 403)
+    resp = client.post(f"{BASE}/scenarios/capacity", headers=VIEWER_HEADERS, json={"current_students": 1000})
+    assert resp.status_code == 403
+
+
+def test_capacity_scenarios_named_registry_for_executive_review() -> None:
+    resp = client.post(
+        f"{BASE}/scenarios/capacity",
+        headers=ADMIN_HEADERS,
+        json={"current_students": 1000, "classroom_capacity": 1000},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    scenarios = {s["name"]: s for s in body["scenarios"]}
+    # default named scenarios: baseline, +10, +20, +30
+    assert set(scenarios) == {"baseline", "intake_plus_10pct", "intake_plus_20pct", "intake_plus_30pct"}
+    # deterministic projections per scenario
+    assert scenarios["baseline"]["projection"]["projected_students"] == 1000
+    assert scenarios["intake_plus_30pct"]["projection"]["projected_students"] == 1300
+    # +30% util 1.3 -> a high classroom warning surfaces in that scenario
+    plus30_signals = {w["signal"]: w for w in scenarios["intake_plus_30pct"]["warnings"]}
+    assert plus30_signals["classroom_capacity_risk"]["severity"] == "high"
+    # baseline util 1.0 -> no classroom warning (strict >)
+    assert all(w["signal"] != "classroom_capacity_risk" for w in scenarios["baseline"]["warnings"])
+    assert body["human_review_required"] is True
