@@ -306,6 +306,69 @@ def test_finance_hardship_finance_office_referral_is_metadata_only() -> None:
     assert create_event.call_args.kwargs["event_type"] == "hardship.finance_office_referral_recorded"
 
 
+# --- A-055.HSP-R1: hardship status-transition guard (adversarial-review remediation) ---
+
+def _finance_hardship(status: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=22,
+        tenant_id=1,
+        request_id=11,
+        status=status,
+        readiness_status="ready_for_human_review",
+        missing_evidence_json=[],
+        recommended_next_step="queue_human_review",
+        metadata_json={"source_flow": "student_finance_receivables_handoff", "receivables_metadata_id": 7},
+        created_at=None,
+        updated_at=None,
+    )
+
+
+def test_finance_office_referral_rejected_when_human_review_skipped() -> None:
+    # Out-of-order: referral directly on a readiness_evaluated hardship must be rejected (human-review gate).
+    db = _db()
+    request = service.schemas.FinanceHardshipFinanceOfficeReferralRequest(
+        referral_target="student_finance_office", referral_reason="r", referral_priority="high", note="n"
+    )
+    with patch(
+        "app.modules.student_services_support.service.repository.get_hardship_request",
+        return_value=_finance_hardship("readiness_evaluated"),
+    ), patch("app.modules.student_services_support.service.repository.update_hardship_request") as upd:
+        with pytest.raises(service.DomainValidationError) as exc:
+            service.create_finance_hardship_finance_office_referral(db, 1, "actor-1", 22, request)
+    assert "invalid_hardship_status_transition" in str(exc.value)
+    upd.assert_not_called()  # nothing persisted on a rejected transition
+
+
+def test_human_review_outcome_note_rejected_on_terminal_hardship() -> None:
+    # Re-mutating a terminal (finance_office_referral_recorded) hardship must be rejected.
+    db = _db()
+    request = service.schemas.FinanceHardshipHumanReviewOutcomeNoteRequest(
+        outcome_label="manual_review_recorded", reviewer_recommendation="manual_finance_review", note="n"
+    )
+    with patch(
+        "app.modules.student_services_support.service.repository.get_hardship_request",
+        return_value=_finance_hardship("finance_office_referral_recorded"),
+    ), patch("app.modules.student_services_support.service.repository.update_hardship_request") as upd:
+        with pytest.raises(service.DomainValidationError):
+            service.record_finance_hardship_human_review_outcome_note(db, 1, "actor-1", 22, request)
+    upd.assert_not_called()
+
+
+def test_evidence_gap_intake_rejected_after_referral() -> None:
+    # Evidence-gap intake must be forbidden once the hardship is terminal (referral recorded).
+    db = _db()
+    request = service.schemas.FinanceHardshipEvidenceGapIntakeRequest(
+        satisfies_gap="balance_statement", evidence_type="document_metadata", evidence_ref="ref", source_available=False
+    )
+    with patch(
+        "app.modules.student_services_support.service.repository.get_hardship_request",
+        return_value=_finance_hardship("finance_office_referral_recorded"),
+    ), patch("app.modules.student_services_support.service.repository.update_hardship_request") as upd:
+        with pytest.raises(service.DomainValidationError):
+            service.intake_finance_hardship_evidence_gap(db, 1, "actor-1", 22, request)
+    upd.assert_not_called()
+
+
 def test_finance_hardship_finance_office_referral_queue_is_visibility_only() -> None:
     db = _db()
     hardship = SimpleNamespace(

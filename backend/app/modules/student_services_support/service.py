@@ -52,6 +52,23 @@ def _validate_transition(current_status: str, new_status: str) -> None:
         raise DomainValidationError(f"invalid_request_status_transition: {current_status} -> {new_status}")
 
 
+# Finance-handoff hardship lifecycle: readiness_evaluated -> human_review_outcome_recorded ->
+# finance_office_referral_recorded (terminal). Enforces the human-review gate before a referral and
+# prevents re-mutating a terminal record (adversarial-review remediation).
+_HARDSHIP_ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
+    "readiness_evaluated": frozenset({"human_review_outcome_recorded"}),
+    "human_review_outcome_recorded": frozenset({"finance_office_referral_recorded"}),
+    "finance_office_referral_recorded": frozenset(),
+}
+_HARDSHIP_TERMINAL_STATUS = "finance_office_referral_recorded"
+
+
+def _validate_hardship_transition(current_status: str, new_status: str) -> None:
+    allowed = _HARDSHIP_ALLOWED_TRANSITIONS.get(current_status, frozenset())
+    if new_status not in allowed:
+        raise DomainValidationError(f"invalid_hardship_status_transition: {current_status} -> {new_status}")
+
+
 def _base_response() -> dict[str, Any]:
     return {
         "module": models.MODULE_NAME,
@@ -679,6 +696,8 @@ def intake_finance_hardship_evidence_gap(
     metadata = dict(hardship.metadata_json or {})
     if metadata.get("source_flow") != _FINANCE_HARDSHIP_SOURCE_FLOW:
         raise DomainValidationError("hardship_request is not a finance handoff record")
+    if hardship.status == _HARDSHIP_TERMINAL_STATUS:
+        raise DomainValidationError("evidence_gap_intake_not_allowed_after_referral")
 
     satisfied_gap = request.satisfies_gap.strip()
     current_missing = [str(value) for value in list(hardship.missing_evidence_json or [])]
@@ -761,6 +780,7 @@ def record_finance_hardship_human_review_outcome_note(
     metadata = dict(hardship.metadata_json or {})
     if metadata.get("source_flow") != _FINANCE_HARDSHIP_SOURCE_FLOW:
         raise DomainValidationError("hardship_request is not a finance handoff record")
+    _validate_hardship_transition(hardship.status, "human_review_outcome_recorded")
 
     outcome_note_metadata = {
         "outcome_label": request.outcome_label,
@@ -835,6 +855,7 @@ def create_finance_hardship_finance_office_referral(
     metadata = dict(hardship.metadata_json or {})
     if metadata.get("source_flow") != _FINANCE_HARDSHIP_SOURCE_FLOW:
         raise DomainValidationError("hardship_request is not a finance handoff record")
+    _validate_hardship_transition(hardship.status, "finance_office_referral_recorded")
 
     referral_metadata = {
         "referral_target": request.referral_target,
