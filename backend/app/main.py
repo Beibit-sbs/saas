@@ -105,6 +105,7 @@ from app.modules.academic_integrity.router import router as academic_integrity_r
 from app.modules.accreditation.router import router as accreditation_router
 from app.modules.transcripts.router import router as transcripts_router
 from app.modules.degree_progress.router import router as degree_progress_router
+from app.modules.digital_twin.router import router as digital_twin_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.token_service import (
     TokenValidationError,
@@ -515,6 +516,7 @@ app.include_router(subscriptions_router)
 app.include_router(analytics_router)
 app.include_router(transcripts_router)
 app.include_router(degree_progress_router)
+app.include_router(digital_twin_router)
 app.include_router(academic_records_router)
 app.include_router(tenants_router)
 app.include_router(tenants_public_router)
