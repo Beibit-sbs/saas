@@ -31,7 +31,7 @@ ADMIN_HEADERS = _admin_headers()
 
 def test_route_surface_count() -> None:
     routes = [r for r in app.routes if getattr(r, "path", "").startswith(BASE)]
-    assert len(routes) == 6
+    assert len(routes) == 7
 
 
 @pytest.mark.parametrize("path", ["/state", "/safety-boundaries"])
@@ -299,3 +299,32 @@ def test_scenario_decision_rejects_invalid_decision_value() -> None:
         json={"scenario_name": "x", "decision": "execute_now", "rationale": "nope"},
     )
     assert resp.status_code == 422
+
+
+def test_scenario_decisions_log_requires_auth_and_denies_viewer() -> None:
+    assert client.get(f"{BASE}/scenarios/decisions").status_code in (401, 403)
+    assert client.get(f"{BASE}/scenarios/decisions", headers=VIEWER_HEADERS).status_code == 403
+
+
+@patch("app.modules.audit.service.list_admin_actions")
+def test_scenario_decisions_log_reads_back_from_audit(mock_list) -> None:
+    mock_list.return_value = [
+        {
+            "correlation_id": "cid-1",
+            "actor": "reviewer-7",
+            "timestamp": "2026-06-19T00:00:00Z",
+            "metadata": {"scenario_name": "intake_plus_20pct", "decision": "accepted", "rationale": "ok"},
+        }
+    ]
+    resp = client.get(f"{BASE}/scenarios/decisions", headers=ADMIN_HEADERS)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["count"] == 1
+    item = body["decisions"][0]
+    assert item["scenario_name"] == "intake_plus_20pct"
+    assert item["decision"] == "accepted"
+    assert item["reviewer"] == "reviewer-7"
+    assert item["correlation_id"] == "cid-1"
+    assert body["no_autonomous_execution"] is True
+    # queried the audit trail filtered to the decision action
+    assert mock_list.call_args.kwargs["action"] == "digital_twin.scenario_decision_recorded"

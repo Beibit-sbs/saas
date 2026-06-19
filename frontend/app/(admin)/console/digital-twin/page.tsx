@@ -192,6 +192,16 @@ export default function DigitalTwinPage() {
           <li>rationale required; human_review_required=true</li>
         </ul>
       </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-decision-log">
+        <h2 className="text-base font-semibold">Executive decision log (read-back)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">GET /api/admin/digital-twin/scenarios/decisions</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Reads back the recorded scenario decisions from the audit trail (filtered to
+          digital_twin.scenario_decision_recorded) — reviewer, scenario, decision, rationale,
+          correlation_id, timestamp. Tenant-scoped, read-only; the audit trail is the system of record.
+        </p>
+      </section>
     </div>
   );
 }

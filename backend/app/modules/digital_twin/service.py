@@ -297,3 +297,32 @@ def record_scenario_decision(tenant_id: Any, actor_user_id: Any, request: schema
         decision=request.decision,
         reviewer=actor,
     )
+
+
+def list_scenario_decisions(tenant_id: Any) -> schemas.ScenarioDecisionLogResponse:
+    """Read-back of recorded scenario decisions (executive decision log) from the audit trail."""
+    tid = _validate_tenant(tenant_id)
+
+    from app.modules.audit import service as audit_service
+
+    rows = audit_service.list_admin_actions(
+        action="digital_twin.scenario_decision_recorded",
+        tenant_id=tid,
+        limit=200,
+    )
+
+    items: list[schemas.ScenarioDecisionLogItem] = []
+    for row in rows or []:
+        meta = row.get("metadata") or {}
+        items.append(
+            schemas.ScenarioDecisionLogItem(
+                correlation_id=row.get("correlation_id"),
+                reviewer=row.get("actor"),
+                scenario_name=meta.get("scenario_name"),
+                decision=meta.get("decision"),
+                rationale=meta.get("rationale"),
+                timestamp=row.get("timestamp"),
+            )
+        )
+
+    return schemas.ScenarioDecisionLogResponse(tenant_id=tid, count=len(items), decisions=items)

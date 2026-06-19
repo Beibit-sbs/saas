@@ -80,3 +80,13 @@ def digital_twin_record_scenario_decision(
 ) -> schemas.ScenarioDecisionResponse:
     # Records the human decision to the audit trail; executes nothing.
     return service.record_scenario_decision(_tenant_id(tenant), actor, payload)
+
+
+@router.get("/scenarios/decisions", response_model=schemas.ScenarioDecisionLogResponse)
+def list_digital_twin_scenario_decisions(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.DECISION_RECORD))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.ScenarioDecisionLogResponse:
+    # Read-only executive decision log from the audit trail.
+    return service.list_scenario_decisions(_tenant_id(tenant))

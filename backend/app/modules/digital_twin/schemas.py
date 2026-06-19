@@ -160,3 +160,21 @@ class ScenarioDecisionResponse(BaseModel):
     no_autonomous_execution: bool = True
     human_review_required: bool = True
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+class ScenarioDecisionLogItem(BaseModel):
+    correlation_id: str | None = None
+    reviewer: str | None = None
+    scenario_name: str | None = None
+    decision: str | None = None
+    rationale: str | None = None
+    timestamp: str | None = None
+
+
+class ScenarioDecisionLogResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    count: int = 0
+    decisions: list[ScenarioDecisionLogItem] = Field(default_factory=list)
+    no_autonomous_execution: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
