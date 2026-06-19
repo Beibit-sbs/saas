@@ -31,7 +31,7 @@ ADMIN_HEADERS = _admin_headers()
 
 def test_route_surface_count() -> None:
     routes = [r for r in app.routes if getattr(r, "path", "").startswith(BASE)]
-    assert len(routes) == 5
+    assert len(routes) == 6
 
 
 @pytest.mark.parametrize("path", ["/state", "/safety-boundaries"])
@@ -261,3 +261,41 @@ def test_capacity_scenarios_named_registry_for_executive_review() -> None:
     # baseline util 1.0 -> no classroom warning (strict >)
     assert all(w["signal"] != "classroom_capacity_risk" for w in scenarios["baseline"]["warnings"])
     assert body["human_review_required"] is True
+
+
+def test_scenario_decision_requires_auth_and_denies_viewer() -> None:
+    payload = {"scenario_name": "intake_plus_30pct", "decision": "accepted", "rationale": "ok"}
+    assert client.post(f"{BASE}/scenarios/decision", json=payload).status_code in (401, 403)
+    assert client.post(f"{BASE}/scenarios/decision", headers=VIEWER_HEADERS, json=payload).status_code == 403
+
+
+@patch("app.modules.audit.service.log_admin_action")
+def test_scenario_decision_is_recorded_to_audit_without_execution(mock_audit) -> None:
+    resp = client.post(
+        f"{BASE}/scenarios/decision",
+        headers=ADMIN_HEADERS,
+        json={"scenario_name": "intake_plus_30pct", "decision": "rejected", "rationale": "capacity risk too high"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["recorded"] is True
+    assert body["decision"] == "rejected"
+    assert body["scenario_name"] == "intake_plus_30pct"
+    assert body["no_autonomous_execution"] is True
+    assert body["audit_action"] == "digital_twin.scenario_decision_recorded"
+    assert body["correlation_id"]
+    # the decision was written to the real audit trail (Human approves -> Audit records)
+    mock_audit.assert_called_once()
+    kwargs = mock_audit.call_args.kwargs
+    assert kwargs["action"] == "digital_twin.scenario_decision_recorded"
+    assert kwargs["metadata"]["decision"] == "rejected"
+    assert kwargs["metadata"]["no_autonomous_execution"] is True
+
+
+def test_scenario_decision_rejects_invalid_decision_value() -> None:
+    resp = client.post(
+        f"{BASE}/scenarios/decision",
+        headers=ADMIN_HEADERS,
+        json={"scenario_name": "x", "decision": "execute_now", "rationale": "nope"},
+    )
+    assert resp.status_code == 422

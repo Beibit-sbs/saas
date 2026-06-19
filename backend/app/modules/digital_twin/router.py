@@ -69,3 +69,14 @@ def digital_twin_capacity_scenarios(
 ) -> schemas.CapacityScenarioRegistryResponse:
     # Read-only named-scenario comparison for executive review; executes nothing.
     return service.run_capacity_scenarios(_tenant_id(tenant), payload)
+
+
+@router.post("/scenarios/decision", response_model=schemas.ScenarioDecisionResponse)
+def digital_twin_record_scenario_decision(
+    payload: schemas.ScenarioDecisionRequest,
+    actor: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.DECISION_RECORD))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.ScenarioDecisionResponse:
+    # Records the human decision to the audit trail; executes nothing.
+    return service.record_scenario_decision(_tenant_id(tenant), actor, payload)

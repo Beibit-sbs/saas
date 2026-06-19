@@ -6,6 +6,7 @@ Declares observed dimensions + reused sources. No fabricated simulation numbers.
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
 from app.modules.digital_twin import schemas
 
@@ -257,3 +258,42 @@ def run_capacity_scenarios(tenant_id: Any, request: schemas.CapacityScenarioRequ
         if warning.projection.incomplete_data:
             incomplete = True
     return schemas.CapacityScenarioRegistryResponse(tenant_id=tid, scenarios=items, incomplete_data=incomplete)
+
+
+def record_scenario_decision(tenant_id: Any, actor_user_id: Any, request: schemas.ScenarioDecisionRequest) -> schemas.ScenarioDecisionResponse:
+    """Record a human reviewer's scenario decision to the audit trail.
+
+    Closes the #21 loop (Human approves -> Audit records) WITHOUT executing the
+    decision: the twin only persists that a human decided. No autonomous action.
+    """
+    tid = _validate_tenant(tenant_id)
+    actor = str(actor_user_id or "").strip() or "unknown"
+    correlation_id = str(uuid4())
+
+    from app.modules.audit import service as audit_service
+
+    audit_service.log_admin_action(
+        actor=actor,
+        action="digital_twin.scenario_decision_recorded",
+        path="/api/admin/digital-twin/scenarios/decision",
+        client_ip="internal",
+        correlation_id=correlation_id,
+        metadata={
+            "scenario_name": request.scenario_name,
+            "decision": request.decision,
+            "rationale": request.rationale,
+            "intake_growth_percent": request.intake_growth_percent,
+            "no_autonomous_execution": True,
+        },
+        entity="digital_twin_scenario_decision",
+        result="success",
+        tenant_id=tid,
+    )
+
+    return schemas.ScenarioDecisionResponse(
+        tenant_id=tid,
+        correlation_id=correlation_id,
+        scenario_name=request.scenario_name,
+        decision=request.decision,
+        reviewer=actor,
+    )

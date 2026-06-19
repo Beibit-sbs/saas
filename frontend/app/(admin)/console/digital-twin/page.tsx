@@ -175,6 +175,23 @@ export default function DigitalTwinPage() {
           <li>intake_plus_30pct</li>
         </ul>
       </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-scenario-decision">
+        <h2 className="text-base font-semibold">Human decision → audit (closes the loop)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">POST /api/admin/digital-twin/scenarios/decision</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A reviewer records accepted / rejected / deferred on a scenario with a rationale. The decision
+          is written to the real audit trail (action digital_twin.scenario_decision_recorded) and nothing
+          is executed — the principle in full: Brain sees, twin simulates, workflow proposes, human
+          approves, audit records.
+        </p>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>decision ∈ accepted | rejected | deferred</li>
+          <li>no_autonomous_execution=true</li>
+          <li>recorded to app_audit_events with correlation_id</li>
+          <li>rationale required; human_review_required=true</li>
+        </ul>
+      </section>
     </div>
   );
 }

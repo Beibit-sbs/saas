@@ -136,3 +136,27 @@ class CapacityScenarioRegistryResponse(BaseModel):
     incomplete_data: bool = False
     human_review_required: bool = True
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+class ScenarioDecisionRequest(BaseModel):
+    """A human reviewer's decision on a what-if scenario. Recorded for audit only;
+    the twin executes nothing as a result."""
+
+    scenario_name: str
+    decision: str = Field(pattern="^(accepted|rejected|deferred)$")
+    rationale: str
+    intake_growth_percent: float | None = None
+
+
+class ScenarioDecisionResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    recorded: bool = True
+    audit_action: str = "digital_twin.scenario_decision_recorded"
+    correlation_id: str
+    scenario_name: str
+    decision: str
+    reviewer: str
+    no_autonomous_execution: bool = True
+    human_review_required: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
