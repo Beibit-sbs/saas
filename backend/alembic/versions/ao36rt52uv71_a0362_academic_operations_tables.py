@@ -32,7 +32,7 @@ def _safety_columns(status_default: str = "DRAFT") -> list[sa.Column]:
         sa.Column("automated_grading_enabled", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("automatic_sanction_enabled", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("incomplete_data", sa.Boolean(), nullable=False, server_default=sa.text("true")),
-        sa.Column("limitations_json", JSONB(), nullable=False, server_default="'[]'::jsonb"),
+        sa.Column("limitations_json", JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")),
         sa.Column("source_capability_id", sa.String(length=64), nullable=True),
         sa.Column("source_matrix_row_id", sa.String(length=64), nullable=True),
         sa.Column("created_by_user_id", sa.String(length=255), nullable=True),
@@ -82,7 +82,7 @@ def upgrade() -> None:
             sa.Column("student_ref", sa.String(length=128), nullable=True),
             sa.Column("course_ref", sa.String(length=128), nullable=True),
             sa.Column("canonical_module_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
             sa.Column("notes", sa.Text(), nullable=True),
         ],
     )
@@ -92,7 +92,7 @@ def upgrade() -> None:
             sa.Column("student_ref", sa.String(length=128), nullable=True),
             sa.Column("course_ref", sa.String(length=128), nullable=True),
             sa.Column("gradebook_key", sa.String(length=128), nullable=False),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
         unique_constraints=[sa.UniqueConstraint("tenant_id", "gradebook_key", name="uq_ao_gradebook_metadata_tenant_key")],
     )
@@ -131,7 +131,7 @@ def upgrade() -> None:
             sa.Column("bridge_type", sa.String(length=64), nullable=False),
             sa.Column("canonical_module_ref", sa.String(length=128), nullable=False),
             sa.Column("external_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
     )
     op.create_index("ix_ao_canonical_bridges_tenant_type", "ao_canonical_module_bridges", ["tenant_id", "bridge_type"])
@@ -140,7 +140,7 @@ def upgrade() -> None:
         [
             sa.Column("bridge_key", sa.String(length=128), nullable=False),
             sa.Column("student_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
     )
     _create_safety_table(
@@ -148,7 +148,7 @@ def upgrade() -> None:
         [
             sa.Column("bridge_key", sa.String(length=128), nullable=False),
             sa.Column("external_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
     )
     _create_safety_table(
@@ -156,7 +156,7 @@ def upgrade() -> None:
         [
             sa.Column("bridge_key", sa.String(length=128), nullable=False),
             sa.Column("external_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
     )
     _create_safety_table(
@@ -164,7 +164,7 @@ def upgrade() -> None:
         [
             sa.Column("bridge_key", sa.String(length=128), nullable=False),
             sa.Column("external_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
     )
 
@@ -176,8 +176,8 @@ def upgrade() -> None:
         sa.Column("fake_metrics", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("incomplete_data", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("data_source", sa.String(length=128), nullable=False, server_default="computed_from_academic_operations_metadata"),
-        sa.Column("summary_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
-        sa.Column("limitations_json", JSONB(), nullable=False, server_default="'[]'::jsonb"),
+        sa.Column("summary_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column("limitations_json", JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")),
         sa.Column("source_capability_id", sa.String(length=64), nullable=True),
         sa.Column("source_matrix_row_id", sa.String(length=64), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
@@ -200,7 +200,7 @@ def upgrade() -> None:
         sa.Column("human_review_required", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("automated_decision", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("provider_integration_enabled", sa.Boolean(), nullable=False, server_default=sa.text("false")),
-        sa.Column("payload_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+        sa.Column("payload_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
     )
     op.create_index("ix_ao_audit_events_tenant_id", "ao_academic_operations_audit_events", ["tenant_id"])
@@ -214,7 +214,7 @@ def upgrade() -> None:
             sa.Column("entity_id", sa.BigInteger(), nullable=True),
             sa.Column("evidence_kind", sa.String(length=128), nullable=False),
             sa.Column("external_ref", sa.String(length=128), nullable=True),
-            sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+            sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         ],
     )
     op.create_index("ix_ao_evidence_tenant_entity", "ao_academic_operations_evidence_metadata", ["tenant_id", "entity_type"])

@@ -20,6 +20,7 @@ const HOP_BY_HOP_HEADERS = new Set([
   "host",
   "cookie",
   "content-length",
+  "expect",
 ]);
 
 function toUpstreamPath(pathParts: string[]): string {
@@ -43,12 +44,12 @@ function toUpstreamPath(pathParts: string[]): string {
   return `/api/${normalized}`;
 }
 
-function normalizeError(status: number, detail: string, requestId: string | null) {
-  const code = status === 401
+function normalizeError(status: number, detail: string, requestId: string | null, codeOverride?: string) {
+  const code = codeOverride ?? (status === 401
     ? "UNAUTHORIZED"
     : status === 400
       ? "BAD_REQUEST"
-      : "UPSTREAM_ERROR";
+      : "UPSTREAM_ERROR");
 
   return {
     error: {
@@ -165,9 +166,12 @@ export async function proxyBffRequest(request: NextRequest, pathParts: string[])
       requestPath,
       upstreamUrl: upstreamUrl.toString(),
       message,
+      errorName: error instanceof Error ? error.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : undefined,
+      errorCause: error instanceof Error && error.cause instanceof Error ? error.cause.message : undefined,
     });
     return NextResponse.json(
-      normalizeError(503, message, requestId),
+      normalizeError(503, message, requestId, "BACKEND_UNAVAILABLE"),
       { status: 503 },
     );
   }

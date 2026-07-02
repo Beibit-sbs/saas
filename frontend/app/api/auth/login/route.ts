@@ -57,16 +57,23 @@ export async function POST(request: Request) {
     upstreamPayload.provider = "local";
   }
 
-  const upstream = await fetch(new URL("/api/auth/login", apiBase), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Tenant-ID": tenantId,
-    },
-    body: JSON.stringify(upstreamPayload),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(new URL("/api/auth/login", apiBase), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Tenant-ID": tenantId,
+      },
+      body: JSON.stringify(upstreamPayload),
+    });
+  } catch {
+    return NextResponse.json({ error: { detail: "Authentication service unavailable" } }, { status: 503 });
+  }
 
-  const data = await upstream.json();
+  const data = await upstream.json().catch(() => ({
+    error: { detail: "Authentication service returned an invalid response" },
+  }));
 
   if (!upstream.ok) {
     return NextResponse.json(data, { status: upstream.status });

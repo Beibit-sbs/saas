@@ -101,6 +101,33 @@ def test_tenant_admin_login_valid_credentials_succeeds() -> None:
     assert isinstance(response.cookies.get("app_access_token"), str)
 
 
+def test_superadmin_login_keeps_access_cookie_under_browser_limit() -> None:
+    client.cookies.clear()
+    user = _ensure_local_user(
+        "platform_admin",
+        "PlatformAdminLocal123!",
+        ["superadmin"],
+        "Platform Superadmin",
+        tenant_id=1,
+    )
+
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "platform_admin", "password": "PlatformAdminLocal123!", "provider": "local"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["user_id"] == user["user_id"]
+    token = response.cookies.get("app_access_token")
+    assert isinstance(token, str)
+    assert len(f"app_access_token={token}") < 4096
+    claims = verify_access_token(token)
+    assert claims.roles == ["superadmin"]
+    assert claims.permissions == []
+
+
 def test_tenant_admin_login_invalid_password_fails() -> None:
     client.cookies.clear()
     _ensure_local_user(

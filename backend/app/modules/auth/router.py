@@ -267,6 +267,8 @@ def _token_permissions_for_roles(*, roles: list[str], tenant_id: int) -> list[st
     normalized_roles = [str(item).strip() for item in roles if str(item).strip()]
     if not normalized_roles:
         return []
+    if "superadmin" in normalized_roles:
+        return []
     try:
         return sorted(resolve_permissions_for_tenant(normalized_roles, int(tenant_id)))
     except Exception:

@@ -9,6 +9,10 @@ function readRequiredEnv(name: string): string {
 }
 
 function assertNoForbiddenRuntimeHosts(name: string, value: string): string {
+  if (process.env.NODE_ENV !== "production") {
+    return value;
+  }
+
   const lowered = value.toLowerCase();
   if (FORBIDDEN_RUNTIME_HOST_MARKERS.some((marker) => lowered.includes(marker))) {
     throw new Error(`${name} must not reference local host runtime targets`);

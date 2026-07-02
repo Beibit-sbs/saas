@@ -34,6 +34,7 @@ describe("bff proxy route", () => {
       headers: {
         cookie: "admin_token=session-token",
         "x-request-id": "req-123",
+        expect: "100-continue",
       },
     });
 
@@ -50,6 +51,7 @@ describe("bff proxy route", () => {
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("authorization")).toBe("Bearer session-token");
     expect(headers.get("x-request-id")).toBe("req-123");
+    expect(headers.get("expect")).toBeNull();
   });
 
   it("normalizes upstream errors", async () => {
@@ -71,6 +73,25 @@ describe("bff proxy route", () => {
     expect(body.error.code).toBe("UPSTREAM_ERROR");
     expect(body.error.detail).toBe("backend failed");
     expect(body.error.request_id).toBe("up-err-1");
+  });
+
+  it("marks upstream connection failures as backend unavailable", async () => {
+    vi.spyOn(global, "fetch").mockRejectedValue(new Error("ECONNREFUSED"));
+
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/admin/students`, {
+      headers: {
+        cookie: "admin_token=session-token",
+        "x-request-id": "req-down",
+      },
+    });
+
+    const res = await bffGet(req, { params: { path: ["admin", "students"] } });
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error.code).toBe("BACKEND_UNAVAILABLE");
+    expect(body.error.detail).toBe("Upstream unavailable");
+    expect(body.error.request_id).toBe("req-down");
   });
 
   it("forwards request body for mutating methods", async () => {

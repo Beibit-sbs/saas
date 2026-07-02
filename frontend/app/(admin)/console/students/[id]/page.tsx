@@ -86,7 +86,7 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
           columns={enrollmentColumns}
           data={enrollmentsData?.items ?? []}
           isLoading={enrollmentsLoading}
-          getRowKey={(r) => r.id}
+          getRowKey={(r) => String(r.id)}
           emptyTitle="No enrollments"
         />
       </div>

@@ -79,7 +79,7 @@ def upgrade() -> None:
         sa.Column("version_number", sa.Integer(), nullable=False),
         sa.Column("title", sa.String(length=500), nullable=False),
         sa.Column("body_text", sa.Text(), nullable=True),
-        sa.Column("metadata_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+        sa.Column("metadata_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column("created_by_user_id", sa.BigInteger(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
     )
@@ -109,7 +109,7 @@ def upgrade() -> None:
         sa.Column("actor_role", sa.String(length=64), nullable=True),
         sa.Column("request_id", sa.String(length=64), nullable=True),
         sa.Column("action", sa.String(length=256), nullable=False),
-        sa.Column("payload_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+        sa.Column("payload_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
     )
     op.create_index("ix_doc_audit_events_tenant_entity", "doc_audit_events", ["tenant_id", "entity_type", "entity_id"])

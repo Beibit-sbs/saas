@@ -353,6 +353,27 @@ with conn.cursor() as cur:
     for i in range(1, STUDENT_COUNT + 1):
         student_user_ids.append(f"student_{i:03d}")
 
+    section_ids_by_course: dict[int, int] = {}
+    for idx, course_id in enumerate(course_ids, start=1):
+        section_code = f"DEMO-SEC-{idx:03d}"
+        instructor_id = teacher_user_ids[(idx - 1) % len(teacher_user_ids)] if teacher_user_ids else None
+        cur.execute(
+            """
+            INSERT INTO app_scheduling_course_sections
+              (tenant_id, course_id, term_id, section_code, instructor_id, max_capacity, status, created_at, updated_at, version)
+            VALUES
+              (%s, %s, %s, %s, %s, %s, 'scheduled', NOW(), NOW(), 1)
+            ON CONFLICT (tenant_id, course_id, term_id, section_code) DO UPDATE SET
+              instructor_id = EXCLUDED.instructor_id,
+              max_capacity = EXCLUDED.max_capacity,
+              status = EXCLUDED.status,
+              updated_at = NOW()
+            RETURNING id
+            """,
+            (TENANT_ID, course_id, term_id, section_code, instructor_id, STUDENT_COUNT),
+        )
+        section_ids_by_course[course_id] = cur.fetchone()[0]
+
     def upsert_person(user_id: str, first_name: str, last_name: str) -> int:
         email = f"{user_id}@example.local"
         cur.execute(
@@ -462,12 +483,12 @@ with conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO app_enrollments_enrollments
-                      (tenant_id, student_profile_id, course_id, term_id, enrollment_status, enrollment_type, metadata_json, version, created_by, updated_by, created_at, updated_at)
+                      (tenant_id, student_profile_id, course_id, term_id, section_id, enrollment_status, enrollment_type, metadata_json, version, created_by, updated_by, created_at, updated_at)
                     VALUES
-                      (%s, %s, %s, %s, 'enrolled', 'regular', '{}'::jsonb, 1, 'demo.seed', 'demo.seed', NOW(), NOW())
+                      (%s, %s, %s, %s, %s, 'enrolled', 'regular', '{}'::jsonb, 1, 'demo.seed', 'demo.seed', NOW(), NOW())
                     RETURNING id
                     """,
-                    (TENANT_ID, student_profile_id, course_id, term_id),
+                    (TENANT_ID, student_profile_id, course_id, term_id, section_ids_by_course[course_id]),
                 )
                 enrollment_id = cur.fetchone()[0]
                 enrollment_count += 1

@@ -28,7 +28,7 @@ def upgrade() -> None:
         sa.Column("recipient_user_id", sa.BigInteger(), nullable=True),
         sa.Column("recipient_role", sa.String(100), nullable=True),
         sa.Column("channel", sa.String(20), nullable=False, server_default="IN_APP"),
-        sa.Column("payload_json", JSONB(), nullable=False, server_default="'{}'::jsonb"),
+        sa.Column("payload_json", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column("status", sa.String(20), nullable=False, server_default="PENDING"),
         sa.Column("retry_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("next_retry_at", sa.DateTime(timezone=True), nullable=True),

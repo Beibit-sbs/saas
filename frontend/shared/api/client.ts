@@ -101,8 +101,9 @@ function extractError(body: unknown, status: number): ApiError {
   };
 }
 
-function shouldEmitBackendUnavailable(path: string, status: number): boolean {
+function shouldEmitBackendUnavailable(path: string, status: number, code?: string): boolean {
   if (status !== 503) return false;
+  if (code !== "BACKEND_UNAVAILABLE") return false;
   // Ops console regularly tolerates partial data; avoid global noisy toasts for these probes.
   return !(
     path.startsWith("/health")
@@ -153,7 +154,7 @@ async function parseResponse<T>(res: Response, requestPath: string): Promise<T> 
     if (res.status === 401) {
       emitSessionInvalid({ status: res.status });
     }
-    if (shouldEmitBackendUnavailable(requestPath, res.status)) {
+    if (shouldEmitBackendUnavailable(requestPath, res.status, mapped.code)) {
       emitBackendUnavailable({ status: res.status });
     }
     throw new ApiRequestError(mapped);

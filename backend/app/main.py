@@ -1,3 +1,6 @@
+def _should_inline_bootstrap_admins() -> bool:
+    raw = str(os.getenv("APP_INLINE_BOOTSTRAP_ADMINS", "")).strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 import asyncio
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
@@ -414,6 +417,19 @@ async def lifespan(fastapi_app: FastAPI):
         )
     except Exception as _bridge_err:
         logger.warning("brain_core_action_bridge wiring failed: %s", _bridge_err)
+    if _should_inline_bootstrap_admins():
+        try:
+            from app.bootstrap_admin import ensure_local_tenant_admins, ensure_platform_admin
+
+            platform_result = ensure_platform_admin()
+            tenant_result = ensure_local_tenant_admins()
+            logger.info(
+                "inline admin bootstrap completed: platform=%s tenant_admins=%s",
+                platform_result.get("operation"),
+                tenant_result.get("results", []),
+            )
+        except Exception as bootstrap_err:
+            logger.warning("inline admin bootstrap failed: %s", bootstrap_err)
 
     yield
 
