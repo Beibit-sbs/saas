@@ -156,7 +156,8 @@ const PLATFORM_TABS: Array<{ tab: PlatformConsoleTab; title: string }> = [
 
 export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const router = useRouter();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, roles } = usePermissions();
+  const isPlatformSuperadmin = roles.includes("superadmin");
   const [executiveMode, setExecutiveMode] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
   const [newServiceAccountName, setNewServiceAccountName] = useState("");
@@ -198,13 +199,15 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const plansQuery = useQuery<{ plans: PlanRecord[] }>({
     queryKey: ["platform-console", "plans"],
     queryFn: () => apiGet<{ plans: PlanRecord[] }>("/platform/plans"),
-    refetchInterval: 30_000,
+    enabled: isPlatformSuperadmin,
+    refetchInterval: isPlatformSuperadmin ? 30_000 : false,
   });
 
   const quotasQuery = useQuery<{ quotas: Array<{ plan_id: number; key: string; limit_value: number }> }>({
     queryKey: ["platform-console", "quotas"],
     queryFn: () => apiGet<{ quotas: Array<{ plan_id: number; key: string; limit_value: number }> }>("/platform/quotas"),
-    refetchInterval: 30_000,
+    enabled: isPlatformSuperadmin,
+    refetchInterval: isPlatformSuperadmin ? 30_000 : false,
   });
 
   const featureFlagsQuery = useQuery<{ flags: FeatureFlagRecord[] }>({
@@ -222,8 +225,8 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const billingStateQuery = useQuery<BillingState>({
     queryKey: ["platform-console", "billing-state", selectedTenantId],
     queryFn: () => apiGet<BillingState>(`/platform/tenants/${selectedTenantId}/billing`),
-    enabled: selectedTenantId !== null,
-    refetchInterval: 30_000,
+    enabled: isPlatformSuperadmin && selectedTenantId !== null,
+    refetchInterval: isPlatformSuperadmin ? 30_000 : false,
   });
 
   const webhookSubsQuery = useQuery<WebhookSubscriptionRecord[]>({
@@ -451,6 +454,11 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
     [tenants, selectedTenantId],
   );
 
+  const visibleTabs = useMemo(
+    () => PLATFORM_TABS.filter((item) => isPlatformSuperadmin || (item.tab !== "billing-plans" && item.tab !== "usage-quotas")),
+    [isPlatformSuperadmin],
+  );
+
   const handleTabChange = useCallback((nextTab: PlatformConsoleTab) => {
     router.push(`/console/platform/${TAB_TO_PLATFORM_SECTION[nextTab]}`);
   }, [router]);
@@ -460,7 +468,9 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
       return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-testid="platform-console-overview">
           <Card><CardHeader><CardTitle>Tenants</CardTitle></CardHeader><CardContent>{tenants.length}</CardContent></Card>
-          <Card><CardHeader><CardTitle>Plans</CardTitle></CardHeader><CardContent>{plans.length}</CardContent></Card>
+          {isPlatformSuperadmin ? (
+            <Card><CardHeader><CardTitle>Plans</CardTitle></CardHeader><CardContent>{plans.length}</CardContent></Card>
+          ) : null}
           <Card><CardHeader><CardTitle>Feature Flags</CardTitle></CardHeader><CardContent>{featureFlags.length}</CardContent></Card>
           <Card><CardHeader><CardTitle>Service Accounts</CardTitle></CardHeader><CardContent>{serviceAccounts.length}</CardContent></Card>
         </div>
@@ -469,89 +479,91 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
 
     if (section === "tenants") {
       return (
-        <div className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]" data-testid="platform-console-tenants">
-          <Card data-testid="platform-tenant-onboarding">
-            <CardHeader>
-              <CardTitle>Create University Tenant</CardTitle>
-              <CardDescription>Provision tenant defaults and first tenant admin</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <input
-                className="w-full rounded border px-2 py-1 text-sm"
-                placeholder="University name"
-                value={newTenantName}
-                onChange={(event) => setNewTenantName(event.target.value)}
-                data-testid="tenant-onboarding-name"
-              />
-              <input
-                className="w-full rounded border px-2 py-1 text-sm"
-                placeholder="Admin email"
-                value={newTenantAdminEmail}
-                onChange={(event) => setNewTenantAdminEmail(event.target.value)}
-                data-testid="tenant-onboarding-admin-email"
-              />
-              <input
-                className="w-full rounded border px-2 py-1 text-sm"
-                placeholder="Admin login"
-                value={newTenantAdminLogin}
-                onChange={(event) => setNewTenantAdminLogin(event.target.value)}
-                data-testid="tenant-onboarding-admin-login"
-              />
-              <input
-                className="w-full rounded border px-2 py-1 text-sm"
-                placeholder="Admin display name"
-                value={newTenantAdminDisplayName}
-                onChange={(event) => setNewTenantAdminDisplayName(event.target.value)}
-                data-testid="tenant-onboarding-admin-display-name"
-              />
-              <input
-                className="w-full rounded border px-2 py-1 text-sm"
-                type="password"
-                placeholder="Temporary password"
-                value={newTenantAdminPassword}
-                onChange={(event) => setNewTenantAdminPassword(event.target.value)}
-                data-testid="tenant-onboarding-admin-password"
-              />
-              <input
-                className="w-full rounded border px-2 py-1 text-sm"
-                placeholder="Plan code"
-                value={newTenantPlanCode}
-                onChange={(event) => setNewTenantPlanCode(event.target.value)}
-                data-testid="tenant-onboarding-plan-code"
-              />
-              {tenantOnboardingError ? (
-                <div className="text-xs text-red-700" data-testid="tenant-onboarding-error">{tenantOnboardingError}</div>
-              ) : null}
-              {tenantOnboardingResult ? (
-                <div className="text-xs text-green-700" data-testid="tenant-onboarding-result">{tenantOnboardingResult}</div>
-              ) : null}
-              <Button
-                size="sm"
-                disabled={
-                  createTenantOnboarding.isPending ||
-                  newTenantName.trim().length < 2 ||
-                  newTenantAdminEmail.trim().length < 3 ||
-                  newTenantAdminLogin.trim().length < 3 ||
-                  newTenantAdminPassword.trim().length < 6
-                }
-                onClick={() => {
-                  setTenantOnboardingError(null);
-                  setTenantOnboardingResult(null);
-                  createTenantOnboarding.mutate({
-                    tenant_name: newTenantName.trim(),
-                    admin_email: newTenantAdminEmail.trim(),
-                    admin_login: newTenantAdminLogin.trim(),
-                    admin_password: newTenantAdminPassword.trim(),
-                    admin_display_name: newTenantAdminDisplayName.trim() || "Tenant Administrator",
-                    plan_code: newTenantPlanCode.trim() || "free",
-                  });
-                }}
-                data-testid="tenant-onboarding-submit"
-              >
-                {createTenantOnboarding.isPending ? "Creating..." : "Create Tenant"}
-              </Button>
-            </CardContent>
-          </Card>
+        <div className={isPlatformSuperadmin ? "grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]" : "grid gap-4"} data-testid="platform-console-tenants">
+          {isPlatformSuperadmin ? (
+            <Card data-testid="platform-tenant-onboarding">
+              <CardHeader>
+                <CardTitle>Create University Tenant</CardTitle>
+                <CardDescription>Provision tenant defaults and first tenant admin</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="University name"
+                  value={newTenantName}
+                  onChange={(event) => setNewTenantName(event.target.value)}
+                  data-testid="tenant-onboarding-name"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="Admin email"
+                  value={newTenantAdminEmail}
+                  onChange={(event) => setNewTenantAdminEmail(event.target.value)}
+                  data-testid="tenant-onboarding-admin-email"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="Admin login"
+                  value={newTenantAdminLogin}
+                  onChange={(event) => setNewTenantAdminLogin(event.target.value)}
+                  data-testid="tenant-onboarding-admin-login"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="Admin display name"
+                  value={newTenantAdminDisplayName}
+                  onChange={(event) => setNewTenantAdminDisplayName(event.target.value)}
+                  data-testid="tenant-onboarding-admin-display-name"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  type="password"
+                  placeholder="Temporary password"
+                  value={newTenantAdminPassword}
+                  onChange={(event) => setNewTenantAdminPassword(event.target.value)}
+                  data-testid="tenant-onboarding-admin-password"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="Plan code"
+                  value={newTenantPlanCode}
+                  onChange={(event) => setNewTenantPlanCode(event.target.value)}
+                  data-testid="tenant-onboarding-plan-code"
+                />
+                {tenantOnboardingError ? (
+                  <div className="text-xs text-red-700" data-testid="tenant-onboarding-error">{tenantOnboardingError}</div>
+                ) : null}
+                {tenantOnboardingResult ? (
+                  <div className="text-xs text-green-700" data-testid="tenant-onboarding-result">{tenantOnboardingResult}</div>
+                ) : null}
+                <Button
+                  size="sm"
+                  disabled={
+                    createTenantOnboarding.isPending ||
+                    newTenantName.trim().length < 2 ||
+                    newTenantAdminEmail.trim().length < 3 ||
+                    newTenantAdminLogin.trim().length < 3 ||
+                    newTenantAdminPassword.trim().length < 6
+                  }
+                  onClick={() => {
+                    setTenantOnboardingError(null);
+                    setTenantOnboardingResult(null);
+                    createTenantOnboarding.mutate({
+                      tenant_name: newTenantName.trim(),
+                      admin_email: newTenantAdminEmail.trim(),
+                      admin_login: newTenantAdminLogin.trim(),
+                      admin_password: newTenantAdminPassword.trim(),
+                      admin_display_name: newTenantAdminDisplayName.trim() || "Tenant Administrator",
+                      plan_code: newTenantPlanCode.trim() || "free",
+                    });
+                  }}
+                  data-testid="tenant-onboarding-submit"
+                >
+                  {createTenantOnboarding.isPending ? "Creating..." : "Create Tenant"}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -600,6 +612,16 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
     }
 
     if (section === "billing-plans") {
+      if (!isPlatformSuperadmin) {
+        return (
+          <Card data-testid="platform-console-billing-restricted">
+            <CardHeader>
+              <CardTitle>Billing / Plans</CardTitle>
+              <CardDescription>Platform-wide billing controls are available only to the platform superadmin.</CardDescription>
+            </CardHeader>
+          </Card>
+        );
+      }
       const currentPlanCode = String(billingStateQuery.data?.plan_code || "");
       const nextPlan = plans.find((plan) => plan.code !== currentPlanCode);
       return (
@@ -642,6 +664,16 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
     }
 
     if (section === "usage-quotas") {
+      if (!isPlatformSuperadmin) {
+        return (
+          <Card data-testid="platform-console-usage-quotas-restricted">
+            <CardHeader>
+              <CardTitle>Usage / Quotas</CardTitle>
+              <CardDescription>Platform-wide quota controls are available only to the platform superadmin.</CardDescription>
+            </CardHeader>
+          </Card>
+        );
+      }
       const limits = billingStateQuery.data?.limits ?? {};
       const usage = billingStateQuery.data?.usage ?? {};
       const keys = Array.from(new Set([...Object.keys(limits), ...Object.keys(usage)]));
@@ -976,7 +1008,7 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
         />
 
         <div className="flex flex-wrap gap-2">
-          {PLATFORM_TABS.map((item) => (
+          {visibleTabs.map((item) => (
             <Button
               key={item.tab}
               size="sm"

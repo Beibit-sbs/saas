@@ -78,6 +78,10 @@ function matchesNavItem(pathname: string, href: string): boolean {
   return currentPath === itemPath || currentPath.startsWith(itemPath + "/");
 }
 
+function isPlatformOnlyBillingNav(href: string): boolean {
+  return href === "/console/platform/billing-plans" || href === "/console/platform/usage-quotas";
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { hasPermission, roles } = usePermissions();
@@ -90,11 +94,12 @@ export function AppSidebar() {
         .map((group) => ({
           ...group,
           items: group.items.filter((item) =>
-            item.permission ? hasPermission(item.permission) : true,
+            (roles.includes("superadmin") || !isPlatformOnlyBillingNav(item.href))
+            && (item.permission ? hasPermission(item.permission) : true),
           ),
         }))
         .filter((group) => group.items.length > 0),
-    [hasPermission, navigation],
+    [hasPermission, navigation, roles],
   );
 
   const activeHref = useMemo(() => {
