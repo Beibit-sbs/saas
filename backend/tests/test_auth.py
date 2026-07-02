@@ -128,6 +128,42 @@ def test_superadmin_login_keeps_access_cookie_under_browser_limit() -> None:
     assert claims.permissions == []
 
 
+def test_tenant_admin_login_keeps_access_cookie_under_browser_limit(monkeypatch) -> None:
+    client.cookies.clear()
+    huge_permissions = {f"module_{idx}.resource_{idx}.read" for idx in range(250)}
+    user = _ensure_local_user(
+        "wide_admin",
+        "WideAdminLocal123!",
+        ["admin"],
+        "Wide Permission Admin",
+        tenant_id=1,
+    )
+    monkeypatch.setattr(
+        "app.modules.auth.router.resolve_permissions_for_tenant",
+        lambda _roles, _tenant_id: huge_permissions,
+    )
+
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "wide_admin", "password": "WideAdminLocal123!", "provider": "local"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["user_id"] == user["user_id"]
+    token = response.cookies.get("app_access_token")
+    assert isinstance(token, str)
+    assert len(f"app_access_token={token}") < 4096
+    claims = verify_access_token(token)
+    assert claims.roles == ["admin"]
+    assert claims.permissions == []
+
+    session = client.get("/api/auth/me", headers={"X-Tenant-ID": "1"})
+    assert session.status_code == 200, session.text
+    assert set(session.json()["user"]["permissions"]) == huge_permissions
+
+
 def test_tenant_admin_login_invalid_password_fails() -> None:
     client.cookies.clear()
     _ensure_local_user(

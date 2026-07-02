@@ -275,6 +275,12 @@ def _token_permissions_for_roles(*, roles: list[str], tenant_id: int) -> list[st
         return []
 
 
+def _browser_access_token_permissions() -> list[str]:
+    # Browser sessions resolve permissions authoritatively on each protected request.
+    # Keeping the access-token compact prevents large role sets from exceeding cookie limits.
+    return []
+
+
 def _resolve_authoritative_permissions(*, claims, roles: list[str], tenant_id: int) -> list[str]:
     claim_permissions = []
     if claims is not None:
@@ -472,7 +478,7 @@ def ldap_login(
         auth_source="ldap",
         tenant_id=tenant_id,
         session_id=str(session_row.get("session_id", "")),
-        permissions=_token_permissions_for_roles(roles=list(user["roles"]), tenant_id=tenant_id),
+        permissions=_browser_access_token_permissions(),
     )
     refresh_token = create_refresh_token(
         user_id=str(user["user_id"]),
@@ -604,7 +610,7 @@ def provider_login(
         auth_source=str(user.get("auth_source", "identity")),
         tenant_id=tenant_id,
         session_id=str(session_row.get("session_id", "")),
-        permissions=_token_permissions_for_roles(roles=trusted_roles, tenant_id=tenant_id),
+        permissions=_browser_access_token_permissions(),
     )
     refresh_token = create_refresh_token(
         user_id=user_id,
@@ -692,10 +698,7 @@ def refresh_session(request: Request, response: Response, payload: RefreshPayloa
         auth_source=refresh_claims.auth_source,
         tenant_id=refresh_claims.tenant_id,
         session_id=refresh_claims.session_id,
-        permissions=_token_permissions_for_roles(
-            roles=list(refresh_claims.roles),
-            tenant_id=refresh_claims.tenant_id,
-        ),
+        permissions=_browser_access_token_permissions(),
     )
     new_refresh_token = create_refresh_token(
         user_id=refresh_claims.user_id,
