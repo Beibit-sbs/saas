@@ -125,7 +125,7 @@ export default function DelinquencyCollectionsPage() {
     {
       key: "amount_due",
       header: "Amount Due",
-      cell: (row) => `$${row.amount_due.toLocaleString()}`,
+      cell: (row) => `$${(row.amount_due ?? 0).toLocaleString()}`,
       sortValue: (row) => row.amount_due,
     },
     {

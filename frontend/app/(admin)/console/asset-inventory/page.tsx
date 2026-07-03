@@ -203,19 +203,19 @@ export default function AssetInventoryPage() {
     {
       key: "original_value",
       header: "Original Value",
-      cell: (row) => `$${row.original_value.toLocaleString()}`,
+      cell: (row) => `$${(row.original_value ?? 0).toLocaleString()}`,
       sortValue: (row) => row.original_value,
     },
     {
       key: "current_value",
       header: "Current Value",
-      cell: (row) => `$${row.current_value.toLocaleString()}`,
+      cell: (row) => `$${(row.current_value ?? 0).toLocaleString()}`,
       sortValue: (row) => row.current_value,
     },
     {
       key: "depreciation_rate",
       header: "Rate",
-      cell: (row) => `${(row.depreciation_rate * 100).toFixed(0)}%`,
+      cell: (row) => `${((row.depreciation_rate ?? 0) * 100).toFixed(0)}%`,
       sortValue: (row) => row.depreciation_rate,
     },
     {

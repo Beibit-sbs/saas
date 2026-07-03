@@ -57,3 +57,9 @@ Format: Date · Module · File · Problem · Cause · Fix · Verification
 - **Cause:** Widgets guarded `=== undefined`, but backend returns `null` for unset metrics; `null.toFixed()` and `pct(null)` crashed React render.
 - **Fix:** `pct()` null-safe (returns "—" for null/NaN); all guards `=== undefined`→`== null`, `!== undefined`→`!= null` (ReportCompliance, EscalationRate, EvidenceAttachment widgets).
 - **Verification:** get_errors 0; rebuilt; page renders without crash.
+
+### 2026-07-03 · Finance/Procurement/Asset · asset-inventory/page.tsx, delinquency-collections/page.tsx
+- **Problem:** Table cells called `.toLocaleString()`/`.toFixed()` on nullable numeric fields (`original_value`, `current_value`, `depreciation_rate`, `amount_due`) — crash risk if backend returns null (same class as rector-assignments).
+- **Cause:** No null-guard before numeric formatting.
+- **Fix:** Added `?? 0` guards before `.toLocaleString()`/`.toFixed()`.
+- **Verification:** get_errors 0; rebuilt; asset-inventory renders real rows without crash.

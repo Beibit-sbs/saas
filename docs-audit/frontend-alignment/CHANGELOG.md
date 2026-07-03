@@ -41,3 +41,8 @@ Format: Date · Module · What changed · Files · Checks
 - Fixed rector-assignments dashboard null-crash (`null.toFixed()`). Documented backend rector-list 500 NameError (out of scope) + inert exec-gov fallbacks.
 - Files: `modules/rector-assignments/components/DashboardAnalytics.tsx`.
 - Checks: tsc 0, build PASS, live QA (exec-gov runtime 36 API 200; control-tower render; rector crash fixed).
+
+### 2026-07-03 · Module 09 Finance / Procurement / Asset
+- Added null-guards to asset-inventory + delinquency table cells. Documented budget-planning orphan (phantom `/api/budgets` API, no backend).
+- Files: `app/(admin)/console/asset-inventory/page.tsx`, `app/(admin)/console/delinquency-collections/page.tsx`.
+- Checks: tsc 0, build PASS, live QA (FPA suite/asset/delinquency/expense render real data; budget-planning orphan 404 documented).
