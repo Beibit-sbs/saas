@@ -90,10 +90,11 @@ const POLICY_PROFILE_KEY = "brain-core-policy-profile";
 const POLICY_TUNING_KEY = "brain-core-policy-tuning";
 const EXPLANATION_KEY = "brain-core-explanation";
 
-export function useBrainDecisions() {
+export function useBrainDecisions(tenantId: number) {
   return useQuery({
-    queryKey: [DECISIONS_KEY],
-    queryFn: () => apiGet<BrainCollectionResponse<BrainDecision>>(`${BASE}/decisions`),
+    queryKey: [DECISIONS_KEY, tenantId],
+    queryFn: () => apiGet<BrainCollectionResponse<BrainDecision>>(`${BASE}/tenants/${tenantId}/decisions`),
+    enabled: tenantId > 0,
     staleTime: 15_000,
   });
 }

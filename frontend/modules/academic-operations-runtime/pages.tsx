@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { academicOperationsRuntimeApi } from './api';
+import { ACADEMIC_OPERATIONS_RUNTIME_NAV_ITEMS } from './constants';
 import type {
   AcademicOperationsDashboardSummarySection,
   AcademicOperationsSignalSection,
@@ -49,6 +51,28 @@ function RuntimeSectionCard({
   );
 }
 
+function RuntimeNav({ currentKey }: { currentKey: string }) {
+  return (
+    <nav
+      className="flex flex-wrap gap-2"
+      aria-label="Academic Operations runtime navigation"
+      data-testid="academic-operations-runtime-nav"
+    >
+      {ACADEMIC_OPERATIONS_RUNTIME_NAV_ITEMS.map((item) => (
+        <Link
+          key={item.key}
+          href={item.href}
+          className={`rounded border px-3 py-1.5 text-sm ${
+            item.key === currentKey ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          {item.title}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export function AcademicOperationsRuntimeShellPage() {
   const runtimeShell = useQuery({
     queryKey: ['academic-operations:runtime-shell'],
@@ -74,6 +98,8 @@ export function AcademicOperationsRuntimeShellPage() {
         <h1 className="text-2xl font-semibold">Academic Operations Runtime Shell</h1>
         <p className="text-sm text-muted-foreground">Read-only aggregator shell for Academic Operations runtime visibility and readiness boundaries.</p>
       </header>
+
+      <RuntimeNav currentKey="runtime-shell" />
 
       <section className="grid gap-4 md:grid-cols-2">
         <RuntimeSectionCard title="Runtime Shell Summary" section={runtimeShell.data.runtime_shell_summary} testId="runtime-shell-summary-panel" />

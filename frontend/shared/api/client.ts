@@ -18,8 +18,16 @@ export class ApiRequestError extends Error {
 function mapToBffPath(path: string): string {
   if (path.startsWith("/api/bff/")) return path;
   if (path.startsWith("/platform/")) return `/api/bff${path}`;
-  if (path.startsWith("/api/v1/admin/")) return `/api/bff/${path.slice("/api/".length)}`;
-  if (path.startsWith("/api/v1/platform/")) return `/api/bff/${path.slice("/api/".length)}`;
+  // Route all versioned /api/v1/* backend routes through the BFF proxy. This
+  // covers platform admin/ops (/api/v1/admin, /api/v1/platform) as well as the
+  // domain runtime-shell routers mounted under /api/v1 (e.g.
+  // /api/v1/quality-accreditation, /api/v1/student-success,
+  // /api/v1/academic-operations, /api/v1/reporting, /api/v1/executive-governance).
+  if (path.startsWith("/api/v1/")) return `/api/bff/${path.slice("/api/".length)}`;
+  // Academic Operations sub-runtime routers are mounted under a non-standard
+  // backend prefix (/api/academic-operations/runtime/*) instead of /api/v1;
+  // proxy them through the BFF as well so the runtime sub-pages can load.
+  if (path.startsWith("/api/academic-operations/runtime/")) return `/api/bff/${path.slice("/api/".length)}`;
   if (path.startsWith("/api/admin/")) return `/api/bff/${path.slice("/api/".length)}`;
   if (path === "/health" || path.startsWith("/health/")) return `/api/bff${path}`;
   if (path === "/metrics" || path.startsWith("/metrics/")) return `/api/bff${path}`;

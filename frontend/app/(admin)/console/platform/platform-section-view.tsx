@@ -14,6 +14,7 @@ import { ConfirmActionDialog } from "@/shared/ui/confirm-action-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/shared/api/client";
+import { canAccessPlatformBillingForRoles } from "@/shared/config/role-catalog";
 import { TAB_TO_PLATFORM_SECTION, type PlatformConsoleTab } from "./platform-sections";
 
 interface TenantRecord {
@@ -157,7 +158,7 @@ const PLATFORM_TABS: Array<{ tab: PlatformConsoleTab; title: string }> = [
 export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const router = useRouter();
   const { hasPermission, roles } = usePermissions();
-  const isPlatformSuperadmin = roles.includes("superadmin");
+  const isPlatformSuperadmin = canAccessPlatformBillingForRoles(roles);
   const [executiveMode, setExecutiveMode] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
   const [newServiceAccountName, setNewServiceAccountName] = useState("");

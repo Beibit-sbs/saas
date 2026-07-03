@@ -65,6 +65,9 @@ export default function ModelEvaluationPage() {
             >
               {createRun.isPending ? "Creating..." : "Create Run"}
             </Button>
+            {createRun.isError && (
+              <p className="text-sm text-destructive">Failed to create evaluation run. Please try again.</p>
+            )}
           </div>
         </RequirePermission>
 

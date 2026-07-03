@@ -85,6 +85,9 @@ export default function KnowledgeRetrievalPage() {
                 Indexed: {ingest.data.doc_id} ({ingest.data.chunk_count} chunks)
               </p>
             )}
+            {ingest.isError && (
+              <p className="text-sm text-destructive">Failed to ingest document. Please try again.</p>
+            )}
           </div>
         </RequirePermission>
 
@@ -118,6 +121,9 @@ export default function KnowledgeRetrievalPage() {
                 ))
               )}
             </div>
+          )}
+          {search.isError && (
+            <p className="text-sm text-destructive">Search failed. Please try again.</p>
           )}
         </div>
       </div>

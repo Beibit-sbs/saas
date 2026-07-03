@@ -13,6 +13,7 @@ import { useToast } from "@/shared/ui/use-toast";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
+import { getDefaultPathForRoles } from "@/shared/config/role-catalog";
 import {
   findTenantByDomain,
   findTenantById,
@@ -275,9 +276,9 @@ export default function LoginPage() {
           return;
         }
 
-        const payload = (await res.json()) as { authenticated?: boolean };
+        const payload = (await res.json()) as { authenticated?: boolean; user?: { roles?: string[] } };
         if (payload.authenticated) {
-          const next = searchParams.get("next") ?? "/console";
+          const next = searchParams.get("next") ?? getDefaultPathForRoles(payload.user?.roles ?? []);
           router.replace(next);
           router.refresh();
           return;
@@ -367,8 +368,10 @@ export default function LoginPage() {
         body: JSON.stringify(payload),
       });
 
+      const responsePayload = (await res.json().catch(() => ({}))) as { detail?: string; authenticated?: boolean; user?: { roles?: string[] } };
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const err = responsePayload;
         const detail = String(err?.detail ?? "").trim().toLowerCase();
         if (detail.includes("mfa required")) {
           setMfaRequired(true);
@@ -380,7 +383,7 @@ export default function LoginPage() {
 
       setMfaRequired(false);
 
-      const next = searchParams.get("next") ?? "/console";
+      const next = searchParams.get("next") ?? getDefaultPathForRoles(responsePayload.user?.roles ?? []);
       // Hard navigation avoids client-router race conditions while auth cookie is being persisted.
       if (typeof window !== "undefined") {
         window.location.assign(next);

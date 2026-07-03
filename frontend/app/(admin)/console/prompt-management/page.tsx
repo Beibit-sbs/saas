@@ -58,6 +58,9 @@ export default function PromptManagementPage() {
             >
               {create.isPending ? "Creating..." : "Create Template"}
             </Button>
+            {create.isError && (
+              <p className="text-sm text-destructive">Failed to create template. Please try again.</p>
+            )}
           </div>
         </RequirePermission>
 

@@ -211,6 +211,18 @@ export const PERMISSIONS = {
   MODEL_EVALUATION_READ: "model_evaluation.read",
   MODEL_EVALUATION_WRITE: "model_evaluation.write",
 
+  // Communications / Notification / Community Suite (A-054)
+  COMMUNICATIONS_SUMMARY_READ: "communications.summary.read",
+  COMMUNICATIONS_NOTIFICATIONS_READ: "communications.notifications.read",
+  COMMUNICATIONS_ANNOUNCEMENTS_READ: "communications.announcements.read",
+  COMMUNICATIONS_TEMPLATES_READ: "communications.templates.read",
+  COMMUNICATIONS_PREFERENCES_READ: "communications.preferences.read",
+  COMMUNICATIONS_AUDIT_READ: "communications.audit.read",
+  COMMUNICATIONS_ESCALATIONS_READ: "communications.escalations.read",
+  COMMUNICATIONS_EMERGENCY_READ: "communications.emergency.read",
+  COMMUNICATIONS_PROVIDERS_READ: "communications.providers.read",
+  COMMUNICATIONS_BRAIN_ACTIONS_READ: "communications.brain_actions.read",
+
   // Rector Assignments (Wave 20 / A-031.1)
   RECTOR_ASSIGNMENTS_DASHBOARD_READ: "admin.rector_assignments.dashboard.read",
   RECTOR_ASSIGNMENTS_LIST: "admin.rector_assignments.read",

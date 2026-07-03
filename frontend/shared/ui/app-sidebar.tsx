@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getNavigationForRoles } from "@/shared/config/navigation";
+import { canAccessPlatformBillingForRoles } from "@/shared/config/role-catalog";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { cn } from "@/shared/utils/cn";
@@ -87,6 +88,7 @@ export function AppSidebar() {
   const { hasPermission, roles } = usePermissions();
   const { t } = useLanguage();
   const navigation = getNavigationForRoles(roles);
+  const canAccessPlatformBilling = canAccessPlatformBillingForRoles(roles);
 
   const visibleNavigation = useMemo(
     () =>
@@ -94,12 +96,12 @@ export function AppSidebar() {
         .map((group) => ({
           ...group,
           items: group.items.filter((item) =>
-            (roles.includes("superadmin") || !isPlatformOnlyBillingNav(item.href))
+            (canAccessPlatformBilling || !isPlatformOnlyBillingNav(item.href))
             && (item.permission ? hasPermission(item.permission) : true),
           ),
         }))
         .filter((group) => group.items.length > 0),
-    [hasPermission, navigation, roles],
+    [canAccessPlatformBilling, hasPermission, navigation],
   );
 
   const activeHref = useMemo(() => {

@@ -35,6 +35,7 @@ import {
 } from './constants';
 import { CAMPUS_FACILITIES_NO_OVERCLAIM_COPY } from './boundaryLabels';
 import {
+  CAMPUS_FACILITIES_ROUTE_PERMISSION_MAP,
   canReadCampusFacilitiesRoute,
   getAllowedCampusFacilitiesRoutes,
 } from './guards';
@@ -325,7 +326,12 @@ function CampusFacilitiesPageContent({ routeKey, userPermissions }: { routeKey: 
 
 function CampusFacilitiesPageRuntime({ routeKey }: { routeKey: CampusFacilitiesRouteKey }) {
   const { user } = useAdminAuth();
-  return <CampusFacilitiesPageContent routeKey={routeKey} userPermissions={user?.permissions ?? []} />;
+  // Superadmin carries a wildcard (consistent with the shared hasPermission gate); its
+  // explicit permission list is empty, so expand to every campus route permission for parity.
+  const userPermissions = user?.roles?.includes('superadmin')
+    ? Object.values(CAMPUS_FACILITIES_ROUTE_PERMISSION_MAP)
+    : (user?.permissions ?? []);
+  return <CampusFacilitiesPageContent routeKey={routeKey} userPermissions={userPermissions} />;
 }
 
 export function CampusFacilitiesPage({ routeKey, userPermissions }: { routeKey: CampusFacilitiesRouteKey; userPermissions?: string[] }) {

@@ -42,7 +42,7 @@ export default function BrainCorePage() {
   const tenantId = user?.tenantId ?? 0;
   const actor = user?.sub ?? "ops@brain";
 
-  const decisionsQuery = useBrainDecisions();
+  const decisionsQuery = useBrainDecisions(tenantId);
   const outcomesQuery = useBrainOutcomes();
   const policyProfileQuery = useBrainPolicyProfile(tenantId);
   const policyTuningQuery = useBrainPolicyTuning(tenantId);

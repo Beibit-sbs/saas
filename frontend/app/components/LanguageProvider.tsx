@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { buildCsrfHeaders } from "./csrf";
 import { useAuth } from "./AuthProvider";
 import { commonTranslations, type CommonTranslationKey } from "../../i18n/common";
+import { adminTranslations } from "../../i18n/admin";
 import {
   LOCALE_COOKIE_KEY,
   LOCALE_STORAGE_KEY,
@@ -61,10 +62,12 @@ function pickAvailableLanguage(preferred: unknown, availableCodes: Set<string>, 
   return firstAvailable || "ru";
 }
 
-function getRuntimeDictionary(locale: unknown) {
+function getRuntimeDictionary(locale: unknown): Record<string, string> {
   const normalized = normalizeLocale(locale, "ru");
-  const dictionaries = commonTranslations as Record<string, Record<CommonTranslationKey, string>>;
-  return dictionaries[normalized];
+  const common = commonTranslations as Record<string, Record<string, string>>;
+  const admin = adminTranslations as Record<string, Record<string, string>>;
+  // Merge the admin dictionary as a base layer; common keys take precedence.
+  return { ...(admin[normalized] ?? {}), ...(common[normalized] ?? {}) };
 }
 function readLocaleCookie(): string | null {
   if (typeof document === "undefined") return null;
@@ -261,8 +264,8 @@ export function LanguageProvider({
   const value = useMemo<LanguageContextValue>(() => {
     const selectedDict = getRuntimeDictionary(language);
     const defaultDict = getRuntimeDictionary(runtimeDefaultLanguage);
-    const ruDict = commonTranslations.ru;
-    const enDict = commonTranslations.en;
+    const ruDict = getRuntimeDictionary("ru");
+    const enDict = getRuntimeDictionary("en");
 
     return {
       language,

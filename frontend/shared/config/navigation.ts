@@ -29,6 +29,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS, type Permission } from "./permissions";
+import { getNavigationProfileForRoles } from "./role-catalog";
 
 export interface NavItem {
   label: string;
@@ -172,6 +173,18 @@ export const NAVIGATION: NavGroup[] = [
             permission: PERMISSIONS.DASHBOARD_READ,
           },
         ],
+      },
+      {
+        label: "AI Cost",
+        href: "/console/ai/cost",
+        icon: Wallet,
+        permission: PERMISSIONS.AI_MODELS_MANAGE,
+      },
+      {
+        label: "AI Routing",
+        href: "/console/ai/routing",
+        icon: Network,
+        permission: PERMISSIONS.AI_MODELS_MANAGE,
       },
       {
         label: "Federation",
@@ -400,6 +413,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: ClipboardCheck,
         permission: PERMISSIONS.ADMISSIONS_READ,
       },
+      {
+        label: "Communications",
+        href: "/console/communications/overview",
+        icon: MessageSquare,
+        permission: PERMISSIONS.COMMUNICATIONS_SUMMARY_READ,
+      },
     ],
   },
 ];
@@ -501,10 +520,206 @@ export const DEAN_NAVIGATION: NavGroup[] = [
   },
 ];
 
+export const TENANT_ADMIN_NAVIGATION: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [{ label: "Dashboard", href: "/console", icon: LayoutDashboard }],
+  },
+  {
+    label: "University",
+    items: [
+      {
+        label: "Org Units",
+        href: "/console/org-units",
+        icon: Building2,
+        permission: PERMISSIONS.ORG_UNITS_READ,
+      },
+      {
+        label: "Quality Accreditation",
+        href: "/console/quality-accreditation/runtime-shell",
+        icon: FileText,
+        permission: PERMISSIONS.QUALITY_ACCREDITATION_SUMMARY_READ,
+      },
+      {
+        label: "Student Success",
+        href: "/console/student-success/runtime-shell",
+        icon: GraduationCap,
+        permission: PERMISSIONS.STUDENT_LIFECYCLE_DASHBOARD_READ,
+      },
+      {
+        label: "Academic Operations",
+        href: "/console/academic-operations/runtime-shell",
+        icon: CalendarDays,
+        permission: PERMISSIONS.ACADEMIC_OPERATIONS_OVERVIEW_READ,
+      },
+      {
+        label: "Digital Twin",
+        href: "/console/digital-twin",
+        icon: Bot,
+        permission: PERMISSIONS.DIGITAL_TWIN_STATE_READ,
+      },
+      {
+        label: "Research Brain",
+        href: "/console/research-brain",
+        icon: Bot,
+        permission: PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ,
+      },
+      {
+        label: "Innovation / Commercialization",
+        href: "/console/innovation-commercialization",
+        icon: Bot,
+        permission: PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ,
+      },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      {
+        label: "Jobs",
+        href: "/console/jobs",
+        icon: Briefcase,
+        permission: PERMISSIONS.JOBS_READ,
+      },
+      {
+        label: "Interventions",
+        href: "/console/interventions",
+        icon: AlertTriangle,
+        permission: PERMISSIONS.JOBS_READ,
+      },
+      {
+        label: "Communications",
+        href: "/console/communications/overview",
+        icon: MessageSquare,
+        permission: PERMISSIONS.COMMUNICATIONS_SUMMARY_READ,
+      },
+      {
+        label: "Audit",
+        href: "/console/audit",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.AUDIT_READ,
+      },
+      {
+        label: "Health & Metrics",
+        href: "/console/health",
+        icon: HeartPulse,
+        permission: PERMISSIONS.HEALTH_READ,
+      },
+    ],
+  },
+  {
+    label: "Academic",
+    items: [
+      {
+        label: "Students",
+        href: "/console/students",
+        icon: GraduationCap,
+        permission: PERMISSIONS.STUDENTS_READ,
+      },
+      {
+        label: "Enrollments",
+        href: "/console/enrollments",
+        icon: BookOpen,
+        permission: PERMISSIONS.ENROLLMENTS_READ,
+      },
+      {
+        label: "Grades",
+        href: "/console/grades",
+        icon: BarChart3,
+        permission: PERMISSIONS.GRADES_READ,
+      },
+      {
+        label: "Transcripts",
+        href: "/console/transcripts",
+        icon: FileText,
+        permission: PERMISSIONS.TRANSCRIPTS_READ,
+      },
+      {
+        label: "Degree Progress",
+        href: "/console/degree-progress",
+        icon: ClipboardList,
+        permission: PERMISSIONS.DEGREE_PROGRESS_READ,
+      },
+      {
+        label: "Scheduling",
+        href: "/console/scheduling",
+        icon: CalendarDays,
+        permission: PERMISSIONS.SCHEDULING_READ,
+      },
+      {
+        label: "Admissions",
+        href: "/console/admissions",
+        icon: ClipboardCheck,
+        permission: PERMISSIONS.ADMISSIONS_READ,
+      },
+      {
+        label: "Alumni",
+        href: "/console/alumni",
+        icon: GraduationCap,
+        permission: PERMISSIONS.ALUMNI_READ,
+      },
+    ],
+  },
+  {
+    label: "Users & Roles",
+    items: [
+      {
+        label: "Local Users",
+        href: "/console/local-users",
+        icon: UserCog,
+        permission: PERMISSIONS.LOCAL_USERS_MANAGE,
+      },
+      {
+        label: "RBAC",
+        href: "/console/rbac",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.ROLES_MANAGE,
+      },
+      {
+        label: "Identity & Access",
+        href: "/console/identity",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.INTEGRATIONS_MANAGE,
+      },
+      {
+        label: "LDAP",
+        href: "/console/ldap",
+        icon: Network,
+        permission: PERMISSIONS.INTEGRATIONS_MANAGE,
+      },
+      {
+        label: "Languages",
+        href: "/console/languages",
+        icon: Code2,
+        permission: PERMISSIONS.I18N_MANAGE,
+      },
+      {
+        label: "Workflows",
+        href: "/console/workflows",
+        icon: Bot,
+        permission: PERMISSIONS.WORKFLOWS_READ,
+      },
+    ],
+  },
+];
+
 export const SUPERADMIN_NAVIGATION: NavGroup[] = [
   {
     label: "Overview",
     items: [{ label: "Dashboard", href: "/console", icon: LayoutDashboard }],
+  },
+  {
+    label: "AI",
+    items: [
+      { label: "AI Copilot", href: "/console/ai/copilot", icon: Bot, permission: PERMISSIONS.AI_COPILOT_READ },
+      { label: "Brain Core", href: "/console/ai/brain", icon: Bot, permission: PERMISSIONS.DASHBOARD_READ },
+      { label: "AI Cost", href: "/console/ai/cost", icon: Wallet, permission: PERMISSIONS.AI_MODELS_MANAGE },
+      { label: "AI Routing", href: "/console/ai/routing", icon: Network, permission: PERMISSIONS.AI_MODELS_MANAGE },
+      { label: "Knowledge Retrieval", href: "/console/knowledge-retrieval", icon: BookOpen, permission: PERMISSIONS.KNOWLEDGE_RETRIEVAL_READ },
+      { label: "Prompt Management", href: "/console/prompt-management", icon: FileText, permission: PERMISSIONS.PROMPT_MANAGEMENT_READ },
+      { label: "Model Evaluation", href: "/console/model-evaluation", icon: BarChart3, permission: PERMISSIONS.MODEL_EVALUATION_READ },
+      { label: "Faculty Copilot", href: "/console/faculty-copilot", icon: Bot, permission: PERMISSIONS.FACULTY_COPILOT_READ },
+    ],
   },
   {
     label: "Platform Management",
@@ -704,10 +919,21 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
  * Priority: superadmin/admin > student > teacher > dean > platform nav.
  */
 export function getNavigationForRoles(roles: string[]): NavGroup[] {
-  if (roles.includes("superadmin") || roles.includes("admin"))
-    return SUPERADMIN_NAVIGATION;
-  if (roles.includes("student")) return STUDENT_NAVIGATION;
-  if (roles.includes("teacher")) return TEACHER_NAVIGATION;
-  if (roles.includes("dean")) return DEAN_NAVIGATION;
-  return NAVIGATION;
+  switch (getNavigationProfileForRoles(roles)) {
+    case "superadmin":
+      return SUPERADMIN_NAVIGATION;
+    case "admin":
+    case "auditor":
+      return TENANT_ADMIN_NAVIGATION;
+    case "student":
+      return STUDENT_NAVIGATION;
+    case "teacher":
+    case "faculty":
+      return TEACHER_NAVIGATION;
+    case "dean":
+    case "registrar":
+      return DEAN_NAVIGATION;
+    default:
+      return NAVIGATION;
+  }
 }
