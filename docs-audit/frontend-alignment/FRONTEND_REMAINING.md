@@ -12,5 +12,7 @@ Backend/API changes are out of scope by directive — items requiring backend/op
 | Campus Facilities | `guards.ts` `CAMPUS_FACILITIES_PERMISSIONS` enumeration (length-locked at 46 by a test) still lists old transport/bridge strings; the functional gate (route definitions) is fixed, but full enum reconciliation to backend taxonomy is a follow-up. | Low | Open |
 | Campus Facilities | Metadata-write (POST) parity for superadmin gated separately from VIEW; full write-parity is a follow-up. | Low | Open |
 | Documents | Backend `GET /api/admin/documents/dashboard/summary` does `int(actor)` (router.py:92) → 400 for platform superadmin (non-numeric user_id `local.001`). Backend fix, out of frontend scope; frontend surfaces the error gracefully (ErrorState+Retry). Works for numeric-user_id tenant users. | Medium | Open (backend) |
+| Executive Governance | Backend `GET /api/admin/rector-assignments` → 500 `NameError: repo_list_assignments is not defined` (rector_assignment_workflow/service.py:237). Backend fix, out of scope; frontend calls correctly + degrades gracefully after null-safety fix. | High | Open (backend) |
+| Executive Governance | `executive-governance/page.tsx` wraps ~30 API calls in `?? (async()=>{})` inert fallbacks (dead code; verified no runtime fake data — 36 real API 200). Optional cleanup. | Low | Open |
 
 _Last updated: 2026-07-03._

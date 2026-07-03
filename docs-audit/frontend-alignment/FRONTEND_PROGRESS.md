@@ -13,7 +13,7 @@ Modules processed strictly in `docs-audit/modules/` (alphabetical) order.
 | 5 | Campus Facilities | 100% | ✅ | ✅ | ✅ | ✅ | Done |
 | 6 | Communications | 100% | ✅ | ✅ | ✅ | ✅ | Done |
 | 7 | Documents | 100% | ✅ | ✅ | ✅ | ✅ | Done |
-| 8 | Executive Governance | 0% | — | — | — | — | Pending |
+| 8 | Executive Governance | 100% | ✅ | ✅ | ✅ | ✅ | Done |
 | 9 | Finance / Procurement / Asset | 0% | — | — | — | — | Pending |
 | 10 | HR / Staff Governance | 0% | — | — | — | — | Pending |
 | 11 | Platform Core | 0% | — | — | — | — | Pending |
@@ -30,4 +30,4 @@ Legend: ✅ pass · ⏳ in progress/pending verification · — not started.
 
 > **Global fix (module 4):** wiring `adminTranslations` into `LanguageProvider` fixed raw i18n keys on ALL admin pages that use admin-only translation keys — this retroactively benefits every admin module, not just Auth.
 
-_Last updated: 2026-07-03 (after Documents module functional QA)._
+_Last updated: 2026-07-03 (after Executive Governance module functional QA)._

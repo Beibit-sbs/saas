@@ -36,3 +36,8 @@ Format: Date · Module · What changed · Files · Checks
 - Added Documents sidebar entry (3 nav profiles). Documented backend `int(actor)` dashboard/summary 400 (out of scope).
 - Files: `shared/config/navigation.ts`.
 - Checks: tsc 0, build PASS, live QA (registry/decrees/DDC suite render; dashboard 400 handled by ErrorState).
+
+### 2026-07-03 · Module 08 Executive Governance
+- Fixed rector-assignments dashboard null-crash (`null.toFixed()`). Documented backend rector-list 500 NameError (out of scope) + inert exec-gov fallbacks.
+- Files: `modules/rector-assignments/components/DashboardAnalytics.tsx`.
+- Checks: tsc 0, build PASS, live QA (exec-gov runtime 36 API 200; control-tower render; rector crash fixed).

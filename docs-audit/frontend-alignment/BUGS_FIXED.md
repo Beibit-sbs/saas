@@ -51,3 +51,9 @@ Format: Date · Module · File · Problem · Cause · Fix · Verification
 - **Cause:** No Documents entry in `navigation.ts`.
 - **Fix:** Added "Documents" entry (`/console/documents`, FileText, `PERMISSIONS.DOCUMENTS_READ`) to NAVIGATION, TENANT_ADMIN_NAVIGATION, SUPERADMIN_NAVIGATION.
 - **Verification:** get_errors 0; rebuilt; sidebar entry verified in browser.
+
+### 2026-07-03 · Executive Governance · frontend/modules/rector-assignments/components/DashboardAnalytics.tsx
+- **Problem:** `/console/rector-assignments` crashed with "Application error" — `TypeError: Cannot read properties of null (reading 'toFixed')` (white screen).
+- **Cause:** Widgets guarded `=== undefined`, but backend returns `null` for unset metrics; `null.toFixed()` and `pct(null)` crashed React render.
+- **Fix:** `pct()` null-safe (returns "—" for null/NaN); all guards `=== undefined`→`== null`, `!== undefined`→`!= null` (ReportCompliance, EscalationRate, EvidenceAttachment widgets).
+- **Verification:** get_errors 0; rebuilt; page renders without crash.

@@ -33,7 +33,8 @@ function WidgetUnavailable({ name }: { name: string }) {
   );
 }
 
-function pct(n: number): string {
+function pct(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return "\u2014";
   return `${(n * 100).toFixed(1)}%`;
 }
 
@@ -143,7 +144,7 @@ interface ReportComplianceWidgetProps {
 }
 
 export function ReportComplianceWidget({ compliance, withoutRecent }: ReportComplianceWidgetProps) {
-  if (compliance === undefined) return <WidgetUnavailable name="Report compliance" />;
+  if (compliance == null) return <WidgetUnavailable name="Report compliance" />;
 
   const color =
     compliance >= 0.8 ? 'text-green-700' : compliance >= 0.6 ? 'text-yellow-700' : 'text-red-700';
@@ -157,7 +158,7 @@ export function ReportComplianceWidget({ compliance, withoutRecent }: ReportComp
       <p className={`text-3xl font-bold ${color}`} data-testid="compliance-rate">
         {pct(compliance)}
       </p>
-      {withoutRecent !== undefined && (
+      {withoutRecent != null && (
         <p className="text-sm text-gray-500 mt-2">
           {withoutRecent} assignment{withoutRecent !== 1 ? 's' : ''} without a recent report.
         </p>
@@ -230,7 +231,7 @@ interface EscalationRateWidgetProps {
 }
 
 export function EscalationRateWidget({ rate, avgRevisionCycles }: EscalationRateWidgetProps) {
-  if (rate === undefined) return <WidgetUnavailable name="Escalation rate" />;
+  if (rate == null) return <WidgetUnavailable name="Escalation rate" />;
 
   return (
     <div
@@ -241,7 +242,7 @@ export function EscalationRateWidget({ rate, avgRevisionCycles }: EscalationRate
       <p className="text-3xl font-bold text-orange-700" data-testid="escalation-rate-value">
         {pct(rate)}
       </p>
-      {avgRevisionCycles !== undefined && (
+      {avgRevisionCycles != null && (
         <p className="text-sm text-gray-500 mt-2">
           Avg revision cycles: {avgRevisionCycles.toFixed(1)}
         </p>
@@ -265,7 +266,7 @@ interface EvidenceAttachmentRateWidgetProps {
 }
 
 export function EvidenceAttachmentRateWidget({ rate }: EvidenceAttachmentRateWidgetProps) {
-  if (rate === undefined) return <WidgetUnavailable name="Evidence attachment rate" />;
+  if (rate == null) return <WidgetUnavailable name="Evidence attachment rate" />;
 
   const color =
     rate >= 0.8 ? 'text-green-700' : rate >= 0.5 ? 'text-yellow-700' : 'text-red-700';
