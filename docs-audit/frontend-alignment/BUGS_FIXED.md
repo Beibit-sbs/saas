@@ -45,3 +45,9 @@ Format: Date · Module · File · Problem · Cause · Fix · Verification
 - **Cause:** Campus guard read raw `user.permissions` (empty for superadmin) without the superadmin wildcard that shared `hasPermission` applies.
 - **Fix:** `CampusFacilitiesPageRuntime` feeds superadmin all route permissions (`Object.values(CAMPUS_FACILITIES_ROUTE_PERMISSION_MAP)`).
 - **Verification:** live browser — all campus pages `accessDenied:false`, 0 console errors.
+
+### 2026-07-03 · Documents (navigation) · frontend/shared/config/navigation.ts
+- **Problem:** Documents module (`/console/documents`, `/console/document-decree-correspondence/*`) not discoverable — absent from all nav profiles while peer modules were present.
+- **Cause:** No Documents entry in `navigation.ts`.
+- **Fix:** Added "Documents" entry (`/console/documents`, FileText, `PERMISSIONS.DOCUMENTS_READ`) to NAVIGATION, TENANT_ADMIN_NAVIGATION, SUPERADMIN_NAVIGATION.
+- **Verification:** get_errors 0; rebuilt; sidebar entry verified in browser.

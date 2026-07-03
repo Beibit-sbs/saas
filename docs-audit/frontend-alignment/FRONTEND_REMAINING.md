@@ -11,5 +11,6 @@ Backend/API changes are out of scope by directive — items requiring backend/op
 | Auth / Identity | Backend endpoints without UI: MFA enable/verify/disable, session list/revoke, OIDC initiate, identity mapping edit/delete. Not listed as pages in docs-audit. | Low | Deferred (out of scope) |
 | Campus Facilities | `guards.ts` `CAMPUS_FACILITIES_PERMISSIONS` enumeration (length-locked at 46 by a test) still lists old transport/bridge strings; the functional gate (route definitions) is fixed, but full enum reconciliation to backend taxonomy is a follow-up. | Low | Open |
 | Campus Facilities | Metadata-write (POST) parity for superadmin gated separately from VIEW; full write-parity is a follow-up. | Low | Open |
+| Documents | Backend `GET /api/admin/documents/dashboard/summary` does `int(actor)` (router.py:92) → 400 for platform superadmin (non-numeric user_id `local.001`). Backend fix, out of frontend scope; frontend surfaces the error gracefully (ErrorState+Retry). Works for numeric-user_id tenant users. | Medium | Open (backend) |
 
 _Last updated: 2026-07-03._

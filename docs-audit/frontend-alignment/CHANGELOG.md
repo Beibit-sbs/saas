@@ -31,3 +31,8 @@ Format: Date · Module · What changed · Files · Checks
 ### 2026-07-03 · Module 06 Communications
 - No changes this pass (already aligned pre-pipeline). Verified live.
 - Checks: tsc 0, live QA 9 pages (real API 200, no mocks).
+
+### 2026-07-03 · Module 07 Documents
+- Added Documents sidebar entry (3 nav profiles). Documented backend `int(actor)` dashboard/summary 400 (out of scope).
+- Files: `shared/config/navigation.ts`.
+- Checks: tsc 0, build PASS, live QA (registry/decrees/DDC suite render; dashboard 400 handled by ErrorState).

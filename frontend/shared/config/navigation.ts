@@ -419,6 +419,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: MessageSquare,
         permission: PERMISSIONS.COMMUNICATIONS_SUMMARY_READ,
       },
+      {
+        label: "Documents",
+        href: "/console/documents",
+        icon: FileText,
+        permission: PERMISSIONS.DOCUMENTS_READ,
+      },
     ],
   },
 ];
@@ -592,6 +598,12 @@ export const TENANT_ADMIN_NAVIGATION: NavGroup[] = [
         href: "/console/communications/overview",
         icon: MessageSquare,
         permission: PERMISSIONS.COMMUNICATIONS_SUMMARY_READ,
+      },
+      {
+        label: "Documents",
+        href: "/console/documents",
+        icon: FileText,
+        permission: PERMISSIONS.DOCUMENTS_READ,
       },
       {
         label: "Audit",
@@ -880,6 +892,12 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         href: "/console/workflows",
         icon: Bot,
         permission: PERMISSIONS.WORKFLOWS_READ,
+      },
+      {
+        label: "Documents",
+        href: "/console/documents",
+        icon: FileText,
+        permission: PERMISSIONS.DOCUMENTS_READ,
       },
     ],
   },
