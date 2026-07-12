@@ -1,16 +1,17 @@
 import { RolePortalShell } from "@/app/components/role-portal-shell";
-import { FACULTY_HOME_CARDS } from "./sections";
+import { getRolePortalConfig, getRolePortalHomeCards } from "@/app/components/role-portal-registry";
 
 export default function FacultyPortalPage() {
+  const config = getRolePortalConfig("faculty");
   return (
     <RolePortalShell
-      roleKey="faculty"
-      roleLabel="Faculty Zone"
-      title="Faculty Portal"
-      subtitle="Workspace for instructors to run roster review, grading cycles, and teaching schedule decisions."
-      accentFrom="#7c2d12"
-      accentTo="#0f766e"
-      cards={FACULTY_HOME_CARDS}
+      roleKey={config.roleKey}
+      roleLabel={config.roleLabel}
+      title={config.title}
+      subtitle={config.subtitle}
+      accentFrom={config.accentFrom}
+      accentTo={config.accentTo}
+      cards={getRolePortalHomeCards("faculty")}
     />
   );
 }

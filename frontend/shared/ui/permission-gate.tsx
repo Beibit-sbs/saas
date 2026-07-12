@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShieldOff } from "lucide-react";
 import { useAdminAuth } from "@/shared/auth/context";
 import type { Permission } from "@/shared/config/permissions";
+import { getDefaultPathForRoles } from "@/shared/config/role-catalog";
 
 // ---------------------------------------------------------------------------
 // AccessDenied — full-panel "no permission" placeholder
@@ -15,13 +16,16 @@ interface AccessDeniedProps {
 }
 
 export function AccessDenied({ message = "You don't have permission to view this content." }: AccessDeniedProps) {
+  const { user } = useAdminAuth();
+  const dashboardHref = getDefaultPathForRoles(user?.roles ?? []);
+
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <ShieldOff className="h-12 w-12 text-muted-foreground/40 mb-4" />
       <h3 className="font-medium text-muted-foreground">Access Denied</h3>
       <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs">{message}</p>
       <Link
-        href="/console"
+        href={dashboardHref}
         className="mt-4 text-sm text-primary underline-offset-4 hover:underline"
       >
         Go to Dashboard

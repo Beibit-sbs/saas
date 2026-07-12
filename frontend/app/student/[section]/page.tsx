@@ -2,15 +2,15 @@ import { notFound } from "next/navigation";
 import { RolePortalSectionView } from "@/app/components/role-portal-section-view";
 import { getRolePortalSection } from "@/app/components/role-portal-registry";
 
-type RegistrarSectionPageProps = {
+type StudentSectionPageProps = {
   params: {
     section: string;
   };
 };
 
-export default function RegistrarSectionPage({ params }: RegistrarSectionPageProps) {
-  if (!getRolePortalSection("registrar", params.section)) {
+export default function StudentSectionPage({ params }: StudentSectionPageProps) {
+  if (!getRolePortalSection("student", params.section)) {
     notFound();
   }
-  return <RolePortalSectionView roleKey="registrar" sectionKey={params.section} />;
+  return <RolePortalSectionView roleKey="student" sectionKey={params.section} />;
 }

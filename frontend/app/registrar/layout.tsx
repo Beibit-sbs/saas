@@ -1,11 +1,11 @@
 import { RoleZoneLayout } from "@/app/components/role-zone-layout";
-import { REGISTRAR_NAV_ITEMS } from "./sections";
+import { getRolePortalNavItems } from "@/app/components/role-portal-registry";
 
 export default function RegistrarLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleZoneLayout
       zoneTitle="Registrar Zone"
-      navItems={[...REGISTRAR_NAV_ITEMS]}
+      navItems={getRolePortalNavItems("registrar")}
     >
       {children}
     </RoleZoneLayout>

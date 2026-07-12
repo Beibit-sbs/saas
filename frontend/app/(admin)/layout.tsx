@@ -8,15 +8,15 @@ import { RequireAdminRole } from "@/shared/ui/require-admin-role";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <Providers>
-      <RequireAdminRole>
-        <div className="flex h-screen overflow-hidden">
-          <AppSidebar />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <AppTopbar />
-            <main className="flex-1 overflow-y-auto p-6 bg-muted/20">{children}</main>
-          </div>
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <AppTopbar />
+          <main className="flex-1 overflow-y-auto p-6 bg-muted/20">
+            <RequireAdminRole>{children}</RequireAdminRole>
+          </main>
         </div>
-      </RequireAdminRole>
+      </div>
     </Providers>
   );
 }

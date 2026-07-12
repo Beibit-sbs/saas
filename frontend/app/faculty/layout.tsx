@@ -1,11 +1,11 @@
 import { RoleZoneLayout } from "@/app/components/role-zone-layout";
-import { FACULTY_NAV_ITEMS } from "./sections";
+import { getRolePortalNavItems } from "@/app/components/role-portal-registry";
 
 export default function FacultyLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleZoneLayout
       zoneTitle="Faculty Zone"
-      navItems={[...FACULTY_NAV_ITEMS]}
+      navItems={getRolePortalNavItems("faculty")}
     >
       {children}
     </RoleZoneLayout>
