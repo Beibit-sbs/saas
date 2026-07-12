@@ -12,10 +12,12 @@ type RoleNavItem = {
 type RoleZoneLayoutProps = {
   zoneTitle: string;
   navItems: RoleNavItem[];
+  backHref?: string | null;
+  backLabel?: string;
   children: React.ReactNode;
 };
 
-export function RoleZoneLayout({ zoneTitle, navItems, children }: RoleZoneLayoutProps) {
+export function RoleZoneLayout({ zoneTitle, navItems, backHref = "/console", backLabel = "Back to Console", children }: RoleZoneLayoutProps) {
   const pathname = usePathname();
 
   return (
@@ -29,12 +31,14 @@ export function RoleZoneLayout({ zoneTitle, navItems, children }: RoleZoneLayout
               </p>
               <h2 className="mt-1 text-lg font-semibold text-foreground">{zoneTitle}</h2>
             </div>
-            <Link
-              href="/console"
-              className="rounded-full border border-border/70 bg-card/80 px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/35 hover:bg-accent"
-            >
-              Back to Console
-            </Link>
+            {backHref ? (
+              <Link
+                href={backHref}
+                className="rounded-full border border-border/70 bg-card/80 px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/35 hover:bg-accent"
+              >
+                {backLabel}
+              </Link>
+            ) : null}
           </div>
           <nav aria-label={`${zoneTitle} navigation`} className="mt-4 flex flex-wrap gap-2">
             {navItems.map((item) => (

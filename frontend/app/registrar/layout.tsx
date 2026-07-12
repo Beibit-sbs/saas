@@ -6,6 +6,7 @@ export default function RegistrarLayout({ children }: { children: React.ReactNod
     <RoleZoneLayout
       zoneTitle="Registrar Zone"
       navItems={getRolePortalNavItems("registrar")}
+      backHref={null}
     >
       {children}
     </RoleZoneLayout>

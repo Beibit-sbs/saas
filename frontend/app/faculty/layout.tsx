@@ -6,6 +6,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     <RoleZoneLayout
       zoneTitle="Faculty Zone"
       navItems={getRolePortalNavItems("faculty")}
+      backHref={null}
     >
       {children}
     </RoleZoneLayout>
