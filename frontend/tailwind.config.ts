@@ -52,7 +52,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--sidebar-bg))",
           foreground: "hsl(var(--sidebar-fg))",
           border: "hsl(var(--sidebar-border))",
-          accent: "hsl(var(--sidebar-accent))",
+          accent: {
+            DEFAULT: "hsl(var(--sidebar-accent))",
+            foreground: "hsl(var(--sidebar-accent-foreground))",
+          },
         },
       },
       borderRadius: {

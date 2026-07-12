@@ -86,18 +86,18 @@ export function AppTopbar() {
     .join("") || "U";
 
   return (
-    <header className="flex h-14 items-center justify-end gap-3 border-b bg-background px-4">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-end gap-3 border-b border-border/70 bg-background/88 px-4 backdrop-blur-xl">
       <LanguageSwitcher variant="inline" />
       {user && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 pl-1 pr-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+            <Button variant="ghost" size="sm" className="h-11 rounded-full border border-border/70 bg-card/75 px-2 shadow-sm transition hover:bg-accent/80">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
                 {initials}
               </span>
-              <span className="max-w-[13rem] truncate text-sm text-muted-foreground">{userName}</span>
+              <span className="max-w-[13rem] truncate text-sm font-medium text-foreground">{userName}</span>
               {contextLabel && (
-                <span className="max-w-[12rem] truncate rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground" title={contextLabel}>
+                <span className="max-w-[12rem] truncate rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground" title={contextLabel}>
                   {contextLabel}
                 </span>
               )}
@@ -123,7 +123,7 @@ export function AppTopbar() {
         </DropdownMenu>
       )}
       {!user && (
-        <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5 text-muted-foreground">
+        <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5 rounded-full border border-border/70 bg-card/75 text-foreground shadow-sm">
           <User className="h-4 w-4" />
           {t("ui.signOut")}
         </Button>

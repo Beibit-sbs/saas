@@ -125,17 +125,29 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <GraduationCap className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm">AI University Platform</span>
+    <aside className="flex h-screen w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[16px_0_40px_rgba(15,23,42,0.18)]">
+      <div className="relative overflow-hidden border-b border-sidebar-border px-5 py-4">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.22),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.05),transparent)]" />
+        <div className="relative flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/12 backdrop-blur">
+            <GraduationCap className="h-5 w-5 text-sidebar-accent" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/55">
+              University OS
+            </p>
+            <span className="block truncate text-sm font-semibold text-sidebar-foreground">
+              AI University Platform
+            </span>
+          </div>
+        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {visibleNavigation.map((group) => {
           return (
             <div key={group.label}>
-              <p className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
                 {tx(group.label)}
               </p>
               {group.items.map((item) => {
@@ -146,14 +158,23 @@ export function AppSidebar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+                      "group mb-1.5 flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all duration-200",
                       active
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_14px_30px_rgba(8,145,178,0.28)]"
+                        : "text-sidebar-foreground/82 hover:bg-white/8 hover:text-sidebar-foreground",
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {tx(item.label)}
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 transition-colors",
+                        active
+                          ? "bg-white/14 ring-white/15"
+                          : "bg-white/5 ring-white/8 group-hover:bg-white/10 group-hover:ring-white/12",
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                    </span>
+                    <span className="truncate font-medium">{tx(item.label)}</span>
                   </Link>
                 );
               })}

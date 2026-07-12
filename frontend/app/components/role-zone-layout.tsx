@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/shared/utils/cn";
 
 type RoleNavItem = {
   href: string;
@@ -12,44 +16,37 @@ type RoleZoneLayoutProps = {
 };
 
 export function RoleZoneLayout({ zoneTitle, navItems, children }: RoleZoneLayoutProps) {
+  const pathname = usePathname();
+
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      <header
-        style={{
-          borderBottom: "1px solid rgba(15,23,42,0.08)",
-          background: "#ffffff",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0.85rem 1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+    <div className="min-h-screen bg-[linear-gradient(180deg,rgba(232,246,250,0.95)_0%,rgba(244,249,252,0.92)_18%,rgba(248,250,252,1)_100%)] text-foreground">
+      <header className="sticky top-0 z-10 border-b border-border/70 bg-background/82 backdrop-blur-xl">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p style={{ margin: 0, fontSize: "0.74rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#475569", fontWeight: 700 }}>
+              <p className="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-primary/80">
                 Role Workspace
               </p>
-              <h2 style={{ margin: "0.2rem 0 0", fontSize: "1.05rem", color: "#0f172a" }}>{zoneTitle}</h2>
+              <h2 className="mt-1 text-lg font-semibold text-foreground">{zoneTitle}</h2>
             </div>
-            <Link href="/console" style={{ color: "#0f172a", fontWeight: 700, textDecoration: "none" }}>
+            <Link
+              href="/console"
+              className="rounded-full border border-border/70 bg-card/80 px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/35 hover:bg-accent"
+            >
               Back to Console
             </Link>
           </div>
-          <nav aria-label={`${zoneTitle} navigation`} style={{ marginTop: "0.7rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <nav aria-label={`${zoneTitle} navigation`} className="mt-4 flex flex-wrap gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                style={{
-                  textDecoration: "none",
-                  color: "#0f172a",
-                  border: "1px solid rgba(15,23,42,0.12)",
-                  borderRadius: 999,
-                  padding: "0.32rem 0.72rem",
-                  fontSize: "0.88rem",
-                  fontWeight: 600,
-                  background: "#fff",
-                }}
+                className={cn(
+                  "rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
+                  pathname === item.href || pathname.startsWith(`${item.href}/`)
+                    ? "border-primary/40 bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(8,145,178,0.22)]"
+                    : "border-border/70 bg-card/80 text-foreground hover:border-primary/35 hover:bg-accent",
+                )}
               >
                 {item.label}
               </Link>
