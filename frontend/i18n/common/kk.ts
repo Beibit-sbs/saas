@@ -95,6 +95,8 @@ export const kk = {
   "auth.username": "Логин",
   "auth.password": "Құпиясөз",
   "auth.signIn": "Кіру",
+  "auth.demoAccountsTitle": "Демо-аккаунттар",
+  "auth.demoAccountsHint": "Дайын аккаунтпен бірден кіру үшін рөлді басыңыз.",
   "auth.required": "Міндетті өріс",
   "auth.loginFailed": "Кіру қатесі",
   "auth.tryAgain": "Қайтадан көріңіз.",

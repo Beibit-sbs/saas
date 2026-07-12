@@ -3,6 +3,12 @@ from __future__ import annotations
 import json
 import os
 
+from app.demo_accounts import (
+    DEMO_SUPERADMIN_LOGIN,
+    demo_accounts_enabled,
+    demo_accounts_password,
+    get_tenant_demo_accounts,
+)
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.auth.platform_superadmin_service import ensure_platform_superadmin
 
@@ -161,10 +167,90 @@ def ensure_local_tenant_admins() -> dict[str, object]:
     }
 
 
+def _upsert_demo_tenant_user(
+    *,
+    tenant_id: int,
+    login: str,
+    password: str,
+    display_name: str,
+    role: str,
+) -> str:
+    normalized_login = str(login).strip().lower()
+    if not normalized_login:
+        raise RuntimeError("demo account login must not be empty")
+
+    existing = local_user_store.find_user_by_login(normalized_login)
+    if existing is None:
+        local_user_store.create_user(
+            login=normalized_login,
+            password=password,
+            display_name=display_name,
+            roles=[role],
+            default_language="ru",
+            tenant_id=tenant_id,
+            email=f"{normalized_login}@demo.local",
+        )
+        return "created"
+
+    existing_tenant = int(existing.get("tenant_id", 0))
+    if existing_tenant != tenant_id:
+        raise RuntimeError(
+            f"demo account login '{normalized_login}' belongs to tenant {existing_tenant}, expected tenant {tenant_id}"
+        )
+
+    local_user_store.update_user(
+        str(existing.get("user_id", "")),
+        tenant_id=tenant_id,
+        display_name=display_name,
+        roles=[role],
+    )
+    local_user_store.set_password(str(existing.get("user_id", "")), password, tenant_id=tenant_id)
+    return "updated"
+
+
+def ensure_demo_role_accounts() -> dict[str, object]:
+    """Seed ready-made demo accounts for every platform role.
+
+    Gated by ``DEMO_ROLE_ACCOUNTS_ENABLED`` (default disabled). Idempotent: safe
+    to run on every startup. The platform superadmin demo account is provisioned
+    as a real platform user; all other roles are tenant-scoped local users.
+    """
+    if not demo_accounts_enabled():
+        return {"enabled": False, "results": []}
+
+    password = demo_accounts_password()
+    results: list[dict[str, str]] = []
+
+    # Platform superadmin demo account (real platform user, tenant 1).
+    superadmin_result = ensure_platform_superadmin(
+        login=DEMO_SUPERADMIN_LOGIN,
+        password=password,
+        email=f"{DEMO_SUPERADMIN_LOGIN}@demo.local",
+        update_password=True,
+        force_password_change=False,
+        actor="system.bootstrap.demo",
+    )
+    results.append({"login": DEMO_SUPERADMIN_LOGIN, "role": "superadmin", "result": str(superadmin_result.get("operation", "unknown"))})
+
+    # Tenant-scoped demo accounts (one per role).
+    for account in get_tenant_demo_accounts():
+        result = _upsert_demo_tenant_user(
+            tenant_id=int(account["tenant_id"]),
+            login=str(account["login"]),
+            password=str(account["password"]),
+            display_name=str(account["display_name"]),
+            role=str(account["role"]),
+        )
+        results.append({"login": str(account["login"]), "role": str(account["role"]), "result": result})
+
+    return {"enabled": True, "results": results}
+
+
 def main() -> int:
     payload = {
         "platform_admin": ensure_platform_admin(),
         "tenant_admins": ensure_local_tenant_admins(),
+        "demo_role_accounts": ensure_demo_role_accounts(),
     }
     print(json.dumps(payload, ensure_ascii=True))
     return 0

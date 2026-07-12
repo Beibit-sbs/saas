@@ -95,6 +95,8 @@ export const ru = {
   "auth.username": "Логин",
   "auth.password": "Пароль",
   "auth.signIn": "Войти",
+  "auth.demoAccountsTitle": "Демо-аккаунты",
+  "auth.demoAccountsHint": "Нажмите на роль, чтобы мгновенно войти под готовым аккаунтом.",
   "auth.required": "Обязательное поле",
   "auth.loginFailed": "Ошибка входа",
   "auth.tryAgain": "Попробуйте еще раз.",

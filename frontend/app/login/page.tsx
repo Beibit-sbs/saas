@@ -31,6 +31,14 @@ type FormData = {
   mfaRecoveryCode?: string;
 };
 
+type DemoAccount = {
+  role: string;
+  label: string;
+  login: string;
+  password: string;
+  tenantId: string;
+};
+
 function isPlatformAdminUsername(value: string): boolean {
   const normalized = value.trim().toLowerCase();
   return normalized.startsWith("local/") || normalized === "platform_admin";
@@ -92,6 +100,7 @@ export default function LoginPage() {
   const [tenantSelectionState, setTenantSelectionState] = useState<"default" | "restored" | "manual">("default");
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaError, setMfaError] = useState<string | null>(null);
+  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
   const manualDomainLockRef = useRef<string | null>(null);
   const lastAutoAppliedDomainRef = useRef<string | null>(null);
 
@@ -295,6 +304,46 @@ export default function LoginPage() {
     };
   }, [router, searchParams]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/public/demo-accounts", {
+          cache: "no-store",
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+          return;
+        }
+        const payload = (await res.json()) as {
+          enabled?: boolean;
+          accounts?: Array<{ role?: string; label?: string; login?: string; password?: string; tenant_id?: number | string }>;
+        };
+        if (!payload.enabled || !Array.isArray(payload.accounts)) {
+          return;
+        }
+        const normalized = payload.accounts
+          .map((item) => ({
+            role: String(item.role ?? "").trim(),
+            label: String(item.label ?? "").trim(),
+            login: String(item.login ?? "").trim(),
+            password: String(item.password ?? ""),
+            tenantId: String(item.tenant_id ?? "1").trim() || "1",
+          }))
+          .filter((item) => item.login && item.password);
+        setDemoAccounts(normalized);
+      } catch {
+        // Demo accounts are an optional convenience; ignore failures.
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
   async function fetchCsrfToken(): Promise<string> {
     const csrfRes = await fetch("/api/auth/csrf", {
       method: "GET",
@@ -314,9 +363,15 @@ export default function LoginPage() {
     return csrfToken;
   }
 
-  async function onSubmit(data: FormData) {
-    const platformAdminLogin = isPlatformAdminUsername(data.username);
-    const selectedFormTenantId = String(data.tenantId ?? "").trim();
+  async function performLogin(params: {
+    username: string;
+    password: string;
+    tenantId: string;
+    mfaCode?: string;
+    mfaRecoveryCode?: string;
+  }) {
+    const platformAdminLogin = isPlatformAdminUsername(params.username);
+    const selectedFormTenantId = String(params.tenantId ?? "").trim();
     const effectiveTenantId = platformAdminLogin
       ? "1"
       : (selectedFormTenantId || String(selectedTenantId).trim());
@@ -338,19 +393,19 @@ export default function LoginPage() {
       const csrfToken = await fetchCsrfToken();
 
       const payload: Record<string, unknown> = {
-        login: normalizeBackendLogin(data.username),
-        password: data.password,
+        login: normalizeBackendLogin(params.username),
+        password: params.password,
       };
 
       if (platformAdminLogin) {
         payload.provider = "local";
       }
 
-      if (mfaRequired && data.mfaCode?.trim()) {
-        payload.mfa_code = data.mfaCode.trim();
+      if (mfaRequired && params.mfaCode?.trim()) {
+        payload.mfa_code = params.mfaCode.trim();
       }
-      if (mfaRequired && data.mfaRecoveryCode?.trim()) {
-        payload.mfa_recovery_code = data.mfaRecoveryCode.trim();
+      if (mfaRequired && params.mfaRecoveryCode?.trim()) {
+        payload.mfa_recovery_code = params.mfaRecoveryCode.trim();
       }
 
       if (!platformAdminLogin && effectiveTenantId) {
@@ -368,7 +423,7 @@ export default function LoginPage() {
         body: JSON.stringify(payload),
       });
 
-      const responsePayload = (await res.json().catch(() => ({}))) as { detail?: string; authenticated?: boolean; user?: { roles?: string[] } };
+      const responsePayload = (await res.json().catch(() => ({}))) as { detail?: string; authenticated?: boolean; roles?: string[]; user?: { roles?: string[] } };
 
       if (!res.ok) {
         const err = responsePayload;
@@ -383,7 +438,8 @@ export default function LoginPage() {
 
       setMfaRequired(false);
 
-      const next = searchParams.get("next") ?? getDefaultPathForRoles(responsePayload.user?.roles ?? []);
+      const resolvedRoles = responsePayload.roles ?? responsePayload.user?.roles ?? [];
+      const next = searchParams.get("next") ?? getDefaultPathForRoles(resolvedRoles);
       // Hard navigation avoids client-router race conditions while auth cookie is being persisted.
       if (typeof window !== "undefined") {
         window.location.assign(next);
@@ -400,6 +456,32 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function onSubmit(data: FormData) {
+    await performLogin({
+      username: data.username,
+      password: data.password,
+      tenantId: String(data.tenantId ?? ""),
+      mfaCode: data.mfaCode,
+      mfaRecoveryCode: data.mfaRecoveryCode,
+    });
+  }
+
+  function handleDemoLogin(account: DemoAccount) {
+    if (loading) {
+      return;
+    }
+    setValue("username", account.login, { shouldValidate: false, shouldDirty: true });
+    setValue("password", account.password, { shouldValidate: false, shouldDirty: true });
+    setValue("tenantId", account.tenantId, { shouldValidate: false, shouldDirty: true });
+    setMfaRequired(false);
+    setMfaError(null);
+    void performLogin({
+      username: account.login,
+      password: account.password,
+      tenantId: account.tenantId,
+    });
   }
 
   return (
@@ -500,6 +582,28 @@ export default function LoginPage() {
               {t("auth.signIn")}
             </Button>
           </form>
+          {demoAccounts.length > 0 ? (
+            <div className="mt-5 border-t pt-4">
+              <p className="text-xs font-semibold text-foreground">{t("auth.demoAccountsTitle")}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("auth.demoAccountsHint")}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {demoAccounts.map((account) => (
+                  <Button
+                    key={account.login}
+                    type="button"
+                    variant="outline"
+                    disabled={loading}
+                    onClick={() => handleDemoLogin(account)}
+                    title={`${account.login} / ${account.password}`}
+                    className="h-auto flex-col items-start gap-0.5 whitespace-normal py-2 text-left"
+                  >
+                    <span className="text-xs font-medium capitalize">{account.role}</span>
+                    <span className="text-[10px] font-normal text-muted-foreground">{account.login}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </main>

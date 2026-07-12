@@ -95,6 +95,8 @@ export const ar = {
   "auth.username": "اسم المستخدم",
   "auth.password": "كلمة المرور",
   "auth.signIn": "تسجيل الدخول",
+  "auth.demoAccountsTitle": "حسابات تجريبية",
+  "auth.demoAccountsHint": "انقر على دور لتسجيل الدخول فورًا بحساب جاهز.",
   "auth.required": "مطلوب",
   "auth.loginFailed": "فشل تسجيل الدخول",
   "auth.tryAgain": "يرجى المحاولة مرة أخرى.",

@@ -419,14 +419,20 @@ async def lifespan(fastapi_app: FastAPI):
         logger.warning("brain_core_action_bridge wiring failed: %s", _bridge_err)
     if _should_inline_bootstrap_admins():
         try:
-            from app.bootstrap_admin import ensure_local_tenant_admins, ensure_platform_admin
+            from app.bootstrap_admin import (
+                ensure_demo_role_accounts,
+                ensure_local_tenant_admins,
+                ensure_platform_admin,
+            )
 
             platform_result = ensure_platform_admin()
             tenant_result = ensure_local_tenant_admins()
+            demo_result = ensure_demo_role_accounts()
             logger.info(
-                "inline admin bootstrap completed: platform=%s tenant_admins=%s",
+                "inline admin bootstrap completed: platform=%s tenant_admins=%s demo_accounts=%s",
                 platform_result.get("operation"),
                 tenant_result.get("results", []),
+                demo_result.get("results", []),
             )
         except Exception as bootstrap_err:
             logger.warning("inline admin bootstrap failed: %s", bootstrap_err)

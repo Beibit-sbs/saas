@@ -95,6 +95,8 @@ export const en = {
   "auth.username": "Username",
   "auth.password": "Password",
   "auth.signIn": "Sign in",
+  "auth.demoAccountsTitle": "Demo accounts",
+  "auth.demoAccountsHint": "Click a role to sign in instantly with a ready-made account.",
   "auth.required": "Required",
   "auth.loginFailed": "Login failed",
   "auth.tryAgain": "Please try again.",

@@ -41,8 +41,16 @@ class EnrollmentType(str, Enum):
     TRANSFER_CREDIT = "transfer_credit"
 
 
-enrollment_status_enum = SAEnum(EnrollmentStatus, name="enrollment_status")
-enrollment_type_enum = SAEnum(EnrollmentType, name="enrollment_type")
+enrollment_status_enum = SAEnum(
+    EnrollmentStatus,
+    name="enrollment_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+)
+enrollment_type_enum = SAEnum(
+    EnrollmentType,
+    name="enrollment_type",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+)
 
 
 class AcademicTermModel(Base):

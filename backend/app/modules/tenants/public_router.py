@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.demo_accounts import demo_accounts_enabled, get_public_demo_accounts
 from app.modules.tenants.schemas import LoginDirectoryResponse, LoginDirectoryTenant
 from app.modules.tenants.service import list_login_directory_tenants
 
@@ -38,3 +39,18 @@ def get_login_directory() -> LoginDirectoryResponse:
             for item in tenant_list
         ]
     )
+
+
+@router.get("/public/demo-accounts")
+def get_demo_accounts() -> dict[str, object]:
+    """Public demo accounts for one-click login.
+
+    Returns ready-made accounts for every platform role, but only when demo
+    accounts are explicitly enabled via ``DEMO_ROLE_ACCOUNTS_ENABLED``. When
+    disabled (the production default) this returns an empty, disabled payload so
+    no credentials are ever exposed.
+    """
+    if not demo_accounts_enabled():
+        return {"enabled": False, "accounts": []}
+    return {"enabled": True, "accounts": get_public_demo_accounts()}
+
