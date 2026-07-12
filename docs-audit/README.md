@@ -30,6 +30,7 @@
 | 10 | [10_FEATURE_FLAGS.md](10_FEATURE_FLAGS.md) | Feature flags |
 | 11 | [11_BACKGROUND_JOBS.md](11_BACKGROUND_JOBS.md) | Cron, jobs, tasks, events |
 | 12 | [12_PROJECT_STATISTICS.md](12_PROJECT_STATISTICS.md) | Итоговая статистика |
+| 13 | [13_PLATFORM_FUNCTIONALITY_CATALOG.md](13_PLATFORM_FUNCTIONALITY_CATALOG.md) | Каталог функциональности платформы по бизнес-областям |
 
 ### Каталоги детальной документации
 

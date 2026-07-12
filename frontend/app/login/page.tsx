@@ -13,7 +13,7 @@ import { useToast } from "@/shared/ui/use-toast";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
-import { getDefaultPathForRoles } from "@/shared/config/role-catalog";
+import { getDefaultPathForRoles, hasConsoleAccessForRoles } from "@/shared/config/role-catalog";
 import {
   findTenantByDomain,
   findTenantById,
@@ -83,6 +83,18 @@ function orderTenantOptions(options: LoginTenantOption[], selectedTenantId: stri
   }
 
   return [selected, ...sorted.filter((item) => item.tenantId !== selectedTenantId)];
+}
+
+function resolvePostLoginPath(next: string | null, roles: string[]): string {
+  const fallback = getDefaultPathForRoles(roles);
+  const normalizedNext = String(next ?? "").trim();
+  if (!normalizedNext.startsWith("/")) {
+    return fallback;
+  }
+  if (normalizedNext.startsWith("/console") && !hasConsoleAccessForRoles(roles)) {
+    return fallback;
+  }
+  return normalizedNext || fallback;
 }
 
 export default function LoginPage() {
@@ -287,7 +299,7 @@ export default function LoginPage() {
 
         const payload = (await res.json()) as { authenticated?: boolean; user?: { roles?: string[] } };
         if (payload.authenticated) {
-          const next = searchParams.get("next") ?? getDefaultPathForRoles(payload.user?.roles ?? []);
+          const next = resolvePostLoginPath(searchParams.get("next"), payload.user?.roles ?? []);
           router.replace(next);
           router.refresh();
           return;
@@ -439,7 +451,7 @@ export default function LoginPage() {
       setMfaRequired(false);
 
       const resolvedRoles = responsePayload.roles ?? responsePayload.user?.roles ?? [];
-      const next = searchParams.get("next") ?? getDefaultPathForRoles(resolvedRoles);
+      const next = resolvePostLoginPath(searchParams.get("next"), resolvedRoles);
       // Hard navigation avoids client-router race conditions while auth cookie is being persisted.
       if (typeof window !== "undefined") {
         window.location.assign(next);

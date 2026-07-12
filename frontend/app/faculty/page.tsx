@@ -1,4 +1,5 @@
 import { RolePortalShell } from "@/app/components/role-portal-shell";
+import { FACULTY_HOME_CARDS } from "./sections";
 
 export default function FacultyPortalPage() {
   return (
@@ -6,35 +7,10 @@ export default function FacultyPortalPage() {
       roleKey="faculty"
       roleLabel="Faculty Zone"
       title="Faculty Portal"
-      subtitle="Workspace for instructors to run roster operations, grading cycles, and teaching schedule decisions."
+      subtitle="Workspace for instructors to run roster review, grading cycles, and teaching schedule decisions."
       accentFrom="#7c2d12"
       accentTo="#0f766e"
-      cards={[
-        {
-          title: "Class Roster",
-          description: "Inspect student roster state, profile details, and section-level enrollment composition.",
-          href: "/console/students",
-          cta: "Open roster",
-        },
-        {
-          title: "Grading Cycle",
-          description: "Submit grade updates and verify recent changes before final lock in period close.",
-          href: "/console/grades",
-          cta: "Manage grades",
-        },
-        {
-          title: "Teaching Schedule",
-          description: "Review schedule windows, teaching assignments, and timing constraints per section.",
-          href: "/console/scheduling",
-          cta: "Open scheduling",
-        },
-        {
-          title: "Academic Operations",
-          description: "Track operational alerts and activity events that impact faculty workflows.",
-          href: "/console/ops",
-          cta: "View ops",
-        },
-      ]}
+      cards={FACULTY_HOME_CARDS}
     />
   );
 }

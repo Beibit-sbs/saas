@@ -1,15 +1,11 @@
 import { RoleZoneLayout } from "@/app/components/role-zone-layout";
+import { FACULTY_NAV_ITEMS } from "./sections";
 
 export default function FacultyLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleZoneLayout
       zoneTitle="Faculty Zone"
-      navItems={[
-        { href: "/faculty", label: "Home" },
-        { href: "/console/students", label: "Roster" },
-        { href: "/console/grades", label: "Grades" },
-        { href: "/console/scheduling", label: "Schedule" },
-      ]}
+      navItems={[...FACULTY_NAV_ITEMS]}
     >
       {children}
     </RoleZoneLayout>
